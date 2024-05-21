@@ -1,0 +1,20 @@
+$ cd /
+$ ls
+dir cmwrq
+dir ftrccld
+dir jjlbmtw
+dir jpncfpb
+dir mddr
+dir mthvntdd
+55644 pjts.dzh
+dir ptzsl
+dir wmqc
+$ cd cmwrq
+$ ls
+dir dtbzzl
+dir pjnghbm
+16144 rvs
+50956 swngfrsj.pcj
+dir vhvn
+dir vrt
+dir zgrjmtcq
