@@ -24,4 +24,4 @@ partTwo (curr:list) prevArr =
     let newPrev = curr : prevArr
      in if length prevArr == 2
             then sum newPrev : partTwo list (init newPrev)
-            else partTwo list (curr : prevArr)
+            else partTwo list newPrev
