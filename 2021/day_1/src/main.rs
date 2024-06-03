@@ -1,13 +1,10 @@
-use std::fs;
+use std::{fs, io};
 
-fn main() {
-    let file_contents = match fs::read_to_string("input.txt") {
-        Ok(v) => v,
-        Err(e) => panic!("{}", e),
-    };
-
+fn main() -> io::Result<()> {
+    let file_contents = fs::read_to_string("input.txt")?;
     part_one(&file_contents);
     part_two(&file_contents);
+    Ok(())
 }
 
 fn part_one(file_contents: &str) {
