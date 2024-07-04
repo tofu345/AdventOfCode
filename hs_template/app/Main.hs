@@ -1,8 +1,6 @@
-module Main where 
+module Main where
 
-import Data.List
-import System.IO
-
+main :: IO ()
 main = do
     contents <- readFile "test.txt"
     putStrLn contents
