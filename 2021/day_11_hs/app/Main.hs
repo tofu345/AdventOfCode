@@ -20,8 +20,6 @@ main = do
 
 type Points = Map.Map Point Int
 
-type Seen = [Point]
-
 data Point = Point
     { x :: Int
     , y :: Int
