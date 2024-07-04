@@ -33,7 +33,7 @@ corrupted prevs (curr:rest)
 partOne :: [String] -> IO ()
 partOne contents = do
     putStr "Part One: "
-    print . sum . map (\ch -> fromJust $ lookup ch weighting)
+    print . sum . mapMaybe (`lookup` weighting)
         $ concatMap (corrupted []) contents
 
 incompletePairs :: PrevChunks -> String -> [Char]
