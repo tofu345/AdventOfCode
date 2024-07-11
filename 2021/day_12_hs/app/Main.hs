@@ -14,7 +14,7 @@ main = do
     -- print caves
 
     partOne caves
-    -- partTwo caves
+    partTwo caves
 
 type Caves = Map.Map String [String]
 
@@ -39,7 +39,6 @@ partOne caves = do
     let res = recurse ["start"] [] []
     putStr "Part One: "
     print (length res)
-    return ()
 
     where recurse :: [String] -> Path -> [Path] -> [Path]
           recurse [] _ acc = acc
@@ -53,5 +52,29 @@ partOne caves = do
                             connected = fromJust $ Map.lookup curr caves
                         in recurse connected (curr : path) acc'
 
--- im lost
--- partTwo :: 
+-- im lost... not anymore :>
+partTwo :: Caves -> IO ()
+partTwo caves = do
+    let res = recurse ["start"] [] []
+    putStr "Part Two: "
+    print (length res)
+
+    where recurse :: [String] -> Path -> [Path] -> [Path]
+          recurse [] _ acc = acc
+          recurse ("end":rest) path acc =
+              recurse rest path $ ("end" : path) : acc
+          recurse (curr:rest) path acc =
+                if all isLower curr && curr `elem` path
+                   then
+                       let smallCaves =
+                                group . sort . filter (all isLower)
+                                $ path
+                       in if any (\v -> length v >= 2) smallCaves
+                           then recurse rest path acc
+                           else continue
+                    else continue
+            where continue =
+                    let acc' = recurse rest path acc
+                        connected = fromJust $ Map.lookup curr caves
+                    in recurse connected (curr : path) acc'
+
