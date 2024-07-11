@@ -71,9 +71,9 @@ partTwo caves = do
                                 $ path
                        in if any (\v -> length v >= 2) smallCaves
                            then recurse rest path acc
-                           else continue
-                    else continue
-            where continue =
+                           else recurseDown
+                    else recurseDown
+            where recurseDown =
                     let acc' = recurse rest path acc
                         connected = fromJust $ Map.lookup curr caves
                     in recurse connected (curr : path) acc'
