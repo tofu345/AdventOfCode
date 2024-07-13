@@ -12,7 +12,7 @@ fn main() -> io::Result<()> {
 }
 
 type Dots = HashSet<(usize, usize)>;
-type Folds = Vec<(String, usize)>;
+type Folds<'a> = Vec<(&'a str, usize)>;
 
 fn parse(file_contents: &str) -> (Dots, Folds) {
     let sep = file_contents.lines().take_while(|v| !v.is_empty()).count();
@@ -28,17 +28,12 @@ fn parse(file_contents: &str) -> (Dots, Folds) {
         .map(|c| c.extract())
         .map(|(_, [x, y])| (x.parse::<usize>().unwrap(), y.parse::<usize>().unwrap()))
         .collect();
+    let (_, folds_str) = file_contents.split_once("\n\n").unwrap();
     let folds = Regex::new(r"fold along (?<axis>.)=(?<val>[0-9]*)")
         .unwrap()
-        .captures_iter(
-            &file_contents
-                .lines()
-                .skip(sep)
-                .collect::<Vec<&str>>()
-                .join(" "),
-        )
+        .captures_iter(folds_str)
         .map(|c| c.extract())
-        .map(|(_, [axis, val])| (axis.to_owned(), val.parse::<usize>().unwrap()))
+        .map(|(_, [axis, val])| (axis, val.parse::<usize>().unwrap()))
         .collect();
     (dots, folds)
 }
@@ -66,10 +61,10 @@ fn fold_x(dots: &Dots, mid_point: usize) -> Dots {
 }
 
 fn part_one(dots: &Dots, folds: &Folds) {
-    let (axis, val) = &folds[0];
-    let new_dots = match axis.as_str() {
-        "x" => fold_x(dots, *val),
-        "y" => fold_y(dots, *val),
+    let &(axis, val) = &folds[0];
+    let new_dots = match axis {
+        "x" => fold_x(dots, val),
+        "y" => fold_y(dots, val),
         _ => unreachable!(),
     };
     println!("Part One: {}", new_dots.len());
@@ -77,10 +72,10 @@ fn part_one(dots: &Dots, folds: &Folds) {
 
 fn part_two(dots: &Dots, folds: &Folds) {
     let final_dots = folds.iter().fold(dots.clone(), |acc, v| {
-        let (axis, val) = &v;
-        match axis.as_str() {
-            "x" => fold_x(&acc, *val),
-            "y" => fold_y(&acc, *val),
+        let &(axis, val) = v;
+        match axis {
+            "x" => fold_x(&acc, val),
+            "y" => fold_y(&acc, val),
             _ => unreachable!(),
         }
     });
