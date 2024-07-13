@@ -15,13 +15,12 @@ type Dots = HashSet<(usize, usize)>;
 type Folds<'a> = Vec<(&'a str, usize)>;
 
 fn parse(file_contents: &str) -> (Dots, Folds) {
-    let sep = file_contents.lines().take_while(|v| !v.is_empty()).count();
     let dots = Regex::new(r"(?<x>.*),(?<y>.*)")
         .unwrap()
         .captures_iter(
             &file_contents
                 .lines()
-                .take(sep)
+                .take_while(|v| !v.is_empty())
                 .collect::<Vec<&str>>()
                 .join("\n"),
         )
