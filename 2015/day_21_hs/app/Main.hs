@@ -7,8 +7,7 @@ import Data.Attoparsec.ByteString.Char8 as C8
 import qualified Data.ByteString as B
 import GHC.IO (mkUserError)
 import Control.Exception (throw)
-import Data.List (subsequences)
-import Control.Monad (foldM)
+import Control.Monad (foldM, guard)
 
 -- main :: IO ()
 main = do
@@ -80,10 +79,10 @@ combinations = do
     weapon <- weapons
     armor <- armors
     ring <- [] : foldl (\acc v -> [v]:acc) [] rings
-        ++ filter (\[x, y] -> x /= y) (do
-            r1 <- rings
-            r2 <- rings
-            return [r1, r2])
+        ++ (do r1 <- rings
+               r2 <- rings
+               guard (r1 /= r2)
+               return [r1, r2])
     return Player {weapon, armor, ring}
 
 type Cost = Int
