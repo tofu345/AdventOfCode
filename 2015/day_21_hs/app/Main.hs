@@ -16,7 +16,7 @@ main = do
             Left _ -> throw (userError "invalid data")
             Right v -> v
     partOne boss
-    -- print combinations
+    partTwo boss
     return boss
 
 parser :: Parser Boss
@@ -105,7 +105,7 @@ simulate Player {weapon, armor, ring} (bossHp, bossDmg, bossDef) =
 
 partOne :: Boss -> IO ()
 partOne boss = do
-    minCost <- 
+    minCost <-
         foldM (\acc v -> do
                 let (win, cost) = simulate v boss
                 if win && (acc == 0 || cost < acc)
@@ -117,4 +117,16 @@ partOne boss = do
     print minCost
     return ()
 
--- partTwo ::
+partTwo :: Boss -> IO ()
+partTwo boss = do
+    minCost <-
+        foldM (\acc v -> do
+                let (win, cost) = simulate v boss
+                if not win && (acc == 0 || cost > acc)
+                    then return cost
+                    else return acc)
+            0
+            combinations
+    putStr "Part Two: "
+    print minCost
+    return ()
