@@ -8,6 +8,7 @@ import qualified Data.ByteString as B
 import GHC.IO (mkUserError)
 import Control.Exception (throw)
 import Control.Monad (foldM, guard)
+import Data.List (subsequences)
 
 -- main :: IO ()
 main = do
@@ -78,11 +79,7 @@ combinations :: [Player]
 combinations = do
     weapon <- weapons
     armor <- armors
-    ring <- [] : foldl (\acc v -> [v]:acc) [] rings
-        ++ (do r1 <- rings
-               r2 <- rings
-               guard (r1 /= r2)
-               return [r1, r2])
+    ring <- filter (\v -> length v <= 2) (subsequences rings)
     return Player {weapon, armor, ring}
 
 type Cost = Int
