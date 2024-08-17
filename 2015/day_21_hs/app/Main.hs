@@ -89,16 +89,12 @@ simulate Player {weapon, armor, ring} (bossHp, bossDmg, bossDef) =
     let playerDmg = damage weapon + sum (map damage ring)
         playerDef = defence armor + sum (map defence ring)
         playerCost = cost weapon + cost armor + sum (map cost ring)
-        dmgDealtToBoss = dmgDealt playerDmg bossDef
-        dmgDealtToPlayer = dmgDealt bossDmg playerDef
+        dmgDealtToBoss = max (playerDmg - bossDef) 1
+        dmgDealtToPlayer = max (bossDmg - playerDef) 1
         roundsToKill = ceiling $ toFloat bossHp / toFloat dmgDealtToBoss
         roundsSurvived = ceiling $ toFloat playerHitPoints / toFloat dmgDealtToPlayer
     in (roundsSurvived >= roundsToKill, playerCost)
-    where dmgDealt dmg def =
-            if def > dmg
-                then 1
-                else dmg - def
-          toFloat x = fromIntegral x :: Float
+    where toFloat x = fromIntegral x :: Float
 
 partOne :: Boss -> IO ()
 partOne boss = do
