@@ -2,13 +2,15 @@
 
 module Main where
 
+import System.IO
 import System.Exit
 import Data.Foldable
 import Data.Maybe
+import Data.Ord
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Writer
 import Control.Concurrent
-import System.IO
 
 initialState = State
     { playerHp = 50
@@ -17,9 +19,9 @@ initialState = State
     , bossDmg = 9
     -- { playerHp = 10
     -- , playerMana = 250
-    -- , bossHp = 13
+    -- , bossHp = 14
     -- , bossDmg = 8
-    , manaSpent = 0
+    , spellsCast = []
     , effects = []
     }
 
@@ -29,7 +31,7 @@ main = do
 data State = State
     { playerHp :: Int
     , playerMana :: Int
-    , manaSpent :: Int
+    , spellsCast :: [Spell]
     , effects :: [Effect]
     , bossHp :: Int
     , bossDmg :: Int
@@ -43,9 +45,10 @@ data Spell
     | Recharge
     deriving (Show, Eq, Enum)
 
+spells = enumFrom MagicMissile
+
 data Effect = Effect
     { name :: String
-    , effectStr :: String
     , roundsLeft :: Int
     , effect :: State -> State
     }
@@ -56,12 +59,16 @@ instance Show Effect where
 instance Eq Effect where
     Effect {name = n1} == Effect {name = n2} = n1 == n2
 
-getEffect Shield = shield
-getEffect Poison = poison
-getEffect Recharge = recharge
-getEffect _ = error "spell has no effect"
+instance Eq State where
+    State {spellsCast = m1} == State {spellsCast = m2} = m1 == m2
 
-hasEffect s = s `elem` [Shield, Poison, Recharge]
+instance Ord State where
+    State {spellsCast = m1} <= State {spellsCast = m2} = map cost m1 <= map cost m2
+
+getEffect Shield = Just shield
+getEffect Poison = Just poison
+getEffect Recharge = Just recharge
+getEffect _ = Nothing
 
 cost :: Spell -> Int
 cost MagicMissile = 53
@@ -70,117 +77,71 @@ cost Shield = 113
 cost Poison = 173
 cost Recharge = 229
 
-poison = Effect "Poison" "deals 3 damage" 6 
+poison = Effect "Poison" 6
     (\v@State {bossHp} -> v {bossHp = bossHp - 3})
 -- implemented elsewhere
-shield = Effect "Shield" "provides 7 armor" 6 id
-recharge = Effect "Recharge" "provides 101 mana" 5 
+shield = Effect "Shield" 6 id
+recharge = Effect "Recharge" 5
     (\v@State {playerMana} -> v {playerMana = playerMana + 101})
 
-printState :: State -> IO State
-printState s@State{playerHp, playerMana, bossHp, bossDmg} = do
-    putStrLn $ "\n-- Player has " ++ show playerHp
-        ++ " hit points, " ++ show playerMana ++ " mana"
-    putStrLn $ "-- Boss has " ++ show bossHp
-        ++ " hit points, deals " ++ show bossDmg ++ " damage"
-    return s
+run :: (State -> Maybe State) -> State -> Maybe State
+run f state = do
+    guard (playerMana state > 0 && playerHp state > 0)
+    let state' = applyEffects state
+    if bossHp state' <= 0
+        then return state'
+        else do
+            st <- f state'
+            guard (playerMana st > 0 && playerHp st > 0)
+            return st
 
-run :: (State -> IO ()) -> State -> IO ()
-run f st = do
-    threadDelay 1000000
-    end <- gameOver st
-    unless end $ do
-        printState st
-        st' <- applyEffects st
-        end' <- gameOver st'
-        unless end' (f st')
-    where
-    gameOver :: State -> IO Bool
-    gameOver State {bossHp, playerHp, playerMana, manaSpent}
-        | bossHp <= 0 = do
-            putStrLn $ "Boss Defeated; Spent "
-                ++ show manaSpent ++ " mana"
-            return True
-        | playerHp <= 0 = do
-            putStrLn "Player Defeated"
-            return True
-        | playerMana <= 0 = do
-            putStrLn "Player Mana Depleted"
-            return True
-        | otherwise = return False
-
-applyEffects :: State -> IO State
-applyEffects d@State {effects} = do
+applyEffects :: State -> State
+applyEffects d@State {effects} =
     let data' = foldl (flip effect) d effects
-    forM_ effects
-        (\e -> putStrLn
-            $ name e ++ " "
-            ++ effectStr e
-            ++ "; its timer is now "
-            ++ show (roundsLeft e - 1))
-    let effects' = map (\e@Effect{roundsLeft} ->
+        effects' = map (\e@Effect{roundsLeft} ->
             e {roundsLeft = roundsLeft - 1}) effects
-    return $ data'
-        { effects =
-            filter
-                (\Effect {roundsLeft} -> roundsLeft > 0)
-                effects' }
+    in data'
+        { effects = filter (\Effect {roundsLeft} -> roundsLeft > 0) effects' }
 
-playerTurn :: State -> IO ()
-playerTurn st@State{playerMana, manaSpent} = do
-    spell <- chooseSpell
-    st' <- cast spell $ st
-        { playerMana = playerMana - cost spell
-        , manaSpent = manaSpent + cost spell }
+playerTurn :: Spell -> State -> Maybe State
+playerTurn sp st@State{playerMana, spellsCast} = do
+    st' <- cast sp $ st
+        { playerMana = playerMana - cost sp
+        , spellsCast = sp : spellsCast }
     run bossTurn st'
     where
-    cast :: Spell -> State -> IO State
-    cast MagicMissile st@State{bossHp} =
-        putStrLn "Player casts Magic Missile, dealing 4 damage"
-        >> return (st {bossHp = bossHp - 4})
-    cast Drain st@State{bossHp, playerHp} =
-        putStrLn "Player casts Drain, dealing 2 damage, and healing 2 hit points"
-        >> return (st {bossHp = bossHp - 2, playerHp = playerHp + 2})
+    cast :: Spell -> State -> Maybe State
+    cast MagicMissile st@State{bossHp} = Just $ st {bossHp = bossHp - 4}
+    cast Drain st@State{bossHp, playerHp} = Just
+        $ st {bossHp = bossHp - 2, playerHp = playerHp + 2}
     cast spell st@State{effects} =
-        let e = getEffect spell
-        in do
-            when (e `elem` effects) $ error "duplicate effect"
-            putStrLn $ "Player casts " ++ name e
-            return (st {effects = e : effects})
+        getEffect spell >>= (\e -> Just $ st {effects = e : effects})
 
-bossTurn :: State -> IO ()
-bossTurn st@State {effects, playerHp} = do
-    let hasShield = shield `elem` effects
-    let bossDmg' = if hasShield then max 1 (bossDmg st - 7) else bossDmg st
-    putStr "Boss attacks for "
-    if hasShield
-        then putStrLn $ show (bossDmg st) ++ " - 7 = " ++ show bossDmg'
-        else print bossDmg'
-    run playerTurn (st {playerHp = playerHp - bossDmg'})
+bossTurn :: State -> Maybe State
+bossTurn st = do
+    let hasShield = shield `elem` effects st
+        bossDmg' = if hasShield then max 1 (bossDmg st - 7) else bossDmg st
+        st' = st {playerHp = playerHp st - bossDmg'}
+    guard (playerMana st' > 0 && playerHp st' > 0)
+    foldl (\acc v -> minMaybe acc $ run (playerTurn v) st') Nothing spells
 
-chooseSpell :: IO Spell
-chooseSpell = do
-    hSetBuffering stdout NoBuffering
-    putStr "Choose: [m]agicMissile, [d]ain, [s]hield, [p]oison, [r]echarge: "
-    input <- getLine
-    case head input of
-        'm' -> return MagicMissile
-        'd' -> return Drain
-        's' -> return Shield
-        'p' -> return Poison
-        'r' -> return Recharge
-        _ -> error "invalid input"
+minMaybe :: Maybe State -> Maybe State -> Maybe State
+minMaybe (Just st1) (Just st2) = Just $ min st1 st2
+minMaybe (Just st1) Nothing = Just st1
+minMaybe Nothing (Just st2) = Just st2
+minMaybe _ _ = Nothing
 
 partOne :: State -> IO ()
 partOne s = do
-    putStrLn "Spells:"
-    putStrLn $ "Magic Missile: " ++ show (cost MagicMissile) ++ " mana, deals 4 damage instantly"
-    putStrLn $ "Drain: " ++ show (cost Drain) ++ " mana, deals 2 damage, heals 2 hit points"
-    putStrLn $ "Shield: " ++ show (cost Shield) ++ " mana, reduces bossDmg by 7 for 6 turns"
-    putStrLn $ "Poison: " ++ show (cost Poison) ++ " mana, deals 3 dmg at the start of 6 turns"
-    putStrLn $ "Recharge: " ++ show (cost Recharge) ++ " mana, gives 101 mana at the start of 5 turns"
-
-    run playerTurn s
+    putStr "Part One: "
+    -- let res = foldl (\acc v -> minMaybe acc $ run (playerTurn v) s) Nothing spells
+    let res = run (playerTurn Poison) s
+    case res of
+        Just v -> do
+            print $ reverse (spellsCast v)
+            putStr "Mana Spent = "
+            print $ sum $ map cost $ spellsCast v
+        Nothing -> putStrLn "failed"
     return ()
 
 -- partTwo ::
