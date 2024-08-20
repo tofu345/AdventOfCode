@@ -16,6 +16,8 @@ int main() {
     int num_lines = 0;
     String **lines = split(&contents, &line_sep, &num_lines);
 
+    print_splits(lines, num_lines);
+
     free(file_contents);
     free_string(&contents);
     free_string(&line_sep);
