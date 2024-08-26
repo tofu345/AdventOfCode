@@ -12,7 +12,7 @@ import Text.Read (Lexeme(String))
 
 main = do
     contents <- B.lines <$> B.readFile "input.txt"
-    let ([], data') = partitionEithers (map (parseOnly parser) contents)
+    let (Right data') = mapM (parseOnly parser) contents
         m = M.fromList data'
         ppl = nub $ map (fst . fst) data'
 
