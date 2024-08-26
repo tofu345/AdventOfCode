@@ -7,14 +7,18 @@ import Data.List.Split (splitOn)
 import Data.Semigroup
 import Data.Maybe (fromJust)
 
+import qualified Dijsktras as D
+
 main = do
-    contents <- lines <$> readFile "input.txt"
+    let file =  "input.txt"
+    contents <- lines <$> readFile file
     let cons = parse contents
         dests = M.keys cons
         res = foldl
             (\acc c -> partOne cons c 0 dests <> acc)
             Nothing
             $ M.keys cons
+
     putStr "Part One: "
     print $ getMin $ fromJust res
 
@@ -24,6 +28,9 @@ main = do
             $ M.keys cons
     putStr "Part Two: "
     print $ getMax $ fromJust res'
+
+    putStr "Dijsktras: "
+    D.main cons
 
 type Conns = Map String [(String, Int)]
 

@@ -6,9 +6,7 @@ import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
-import Data.Either
 import Data.List
-import Text.Read (Lexeme(String))
 
 main = do
     contents <- B.lines <$> B.readFile "input.txt"
