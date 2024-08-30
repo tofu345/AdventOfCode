@@ -7,8 +7,8 @@ fn main() {
         Err(e) => panic!("{}", e),
     };
 
-    // part_one(&file_contents);
-    part_two(&file_contents);
+    part_one(&file_contents);
+    // part_two(&file_contents);
 }
 
 fn part_one(file_contents: &str) {
@@ -19,11 +19,13 @@ fn part_one(file_contents: &str) {
     for &line in lines.iter().take(len - 2) {
         let splits: Vec<_> = line.split(" => ").collect();
         let occurences: Vec<_> = molecule.match_indices(splits[0]).map(|(i, _)| i).collect();
+        println!("{:?}", occurences);
         for i in occurences {
             distinct_molecules.insert(replace_substr(molecule, splits[1], i, splits[0].len()));
         }
     }
 
+    println!("{:?}", distinct_molecules);
     println!("Part One: {}", distinct_molecules.len());
 }
 
