@@ -14,21 +14,21 @@ import Data.Function
 main :: IO ()
 main = do
     contents <- lines <$> readFile "input.txt"
-    let molecule = last contents
+    let str = take (length contents - 2) contents
+        molecule = last contents
         r1 = M.fromListWith (++)
              $ map (\v -> let [a, b] = Split.splitOn " => " v in (a, [b]))
-             $ take (length contents - 2) contents
+             str
         ans1 = partOne molecule contents r1
     putStr "Part One: "
     print $ length ans1
 
-    let s = take (length contents - 2) contents
+    let (repsStr, endStr) = break (\v -> head v == 'e') str
         reps = M.fromListWith (++)
              $ map (\v -> let [a, b] = Split.splitOn " => " v in (b, [a]))
-             $ filter (\v -> head v /= 'e') s
+             repsStr
         keys = sortBy (flip compare `on` length) (M.keys reps)
-        end = map (\v -> let [_, b] = Split.splitOn " => " v in b)
-            $ filter (\v -> head v == 'e') s
+        end = mapMaybe (stripPrefix "e => ") endStr
     partTwo molecule reps keys end
 
 replace':: String -> String -> Int -> Int -> String
