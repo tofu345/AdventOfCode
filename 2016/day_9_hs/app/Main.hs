@@ -30,11 +30,10 @@ decompressV2 :: String -> Int
 decompressV2 = f 0
     where
     f n [] = n
-    f n ('(':xs) = do
+    f n ('(':xs) =
         let (marker, rest) = splitAtFirst ')' xs
-        case splitAtFirst 'x' marker of
-            (_, []) -> do
-                f (n + 2 + length marker) rest
+         in case splitAtFirst 'x' marker of
+            (_, []) -> f (n + 2 + length marker) rest
             (num, rep) -> do
                 let (sub, xs') = splitAt (read num) rest
                     v = (* read rep) $ f 0 sub
