@@ -68,7 +68,7 @@ executable day11-hs
     build-depends:    base ^>=4.17.2.1
                     , containers
                     , regex-posix
-                    , text
+                    , dlist
 
     -- Directories containing source files.
     hs-source-dirs:   app
