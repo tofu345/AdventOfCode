@@ -8,6 +8,11 @@ import Control.Monad.ST
 import Data.STRef
 import Control.Monad
 
+type Steps = Int
+type Pairs = Map String Char
+type Quantities = Map Char Int
+type Memo = Map String Quantities
+
 main = do
     contents <- lines <$> readFile "input.txt"
     let pairs = foldl parse M.empty (drop 2 contents)
@@ -43,18 +48,9 @@ main = do
              in z : y : fn (y : rest)
         fn _ = []
 
-type Steps = Int
-type Pairs = Map String Char
-type Quantities = Map Char Int
-type Memo = Map String Quantities
-
 add :: Quantities -> Quantities -> Quantities
 add m1 m2 = foldl f m1 $ M.toList m2
     where f acc (k, v) = M.insertWith (+) k v acc
-
-difference' :: Quantities -> Quantities -> Quantities
-difference' m1 m2 = foldl f m1 $ M.toList m2
-    where f acc (k, v) = M.insertWith (-) k v acc
 
 partTwo :: Steps -> String -> Pairs -> STRef s Quantities -> STRef s Memo -> ST s ()
 partTwo steps (a:b:xs) pairs q p = do
