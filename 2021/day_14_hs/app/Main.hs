@@ -1,24 +1,17 @@
-{-# LANGUAGE NamedFieldPuns #-}
-
 module Main where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import qualified Data.DList as D
 import Data.Foldable (foldl')
 import Data.STRef
 import Control.Monad.ST
+import Control.Monad
 import Text.Regex.Posix
 
 type Steps = Int
 type Pairs = Map String Char
-type Count = Map Char Int
+type Count = Map Char Steps
 type Memo = Map (String, Steps) Count
-
-data Tree a
-    = Empty
-    | Node { value :: a, stepsLeft :: Steps }
-    deriving (Show)
 
 main = do
     contents <- lines <$> readFile "input.txt"
@@ -43,38 +36,36 @@ grow [] _ _ = M.empty
 grow xs numSteps pairs = runST $ do
     countRef <- newSTRef $! countChars xs
     memoRef <- newSTRef $! M.empty
-    mapM_ (\v -> grow' countRef memoRef Node
-            { value = v, stepsLeft = numSteps }) 
-        (group' xs)
+    mapM_ (\v -> grow' countRef memoRef (v, numSteps)) (group' xs)
     readSTRef countRef
     where
     group' :: String -> [String]
     group' (a:b:xs) = [a, b] : group' (b : xs)
     group' _ = []
 
-    grow' :: STRef s Count -> STRef s Memo -> Tree String -> ST s ()
-    grow' _ _ Node {stepsLeft = 0} = return ()
-    grow' countRef memoRef Node {value = val@[a, b], stepsLeft} = do
-        oldCount <- readSTRef countRef
+    grow' :: STRef s Count -> STRef s Memo -> (String, Steps) -> ST s ()
+    grow' _ _ (_, 0) = return ()
+    grow' countRef memoRef cur@(value@[a, b], stepsLeft) = do
         mem <- readSTRef memoRef
-        case M.lookup (val, stepsLeft) mem of
+        case M.lookup cur mem of
             Nothing -> do
-                let ch = pairs M.! val
-                mapM_ (\v -> grow' countRef memoRef Node
-                        { value = v, stepsLeft = stepsLeft - 1 })
+                oldCount <- readSTRef countRef
+                let ch = pairs M.! value
+                mapM_ (\v -> grow' countRef memoRef (v, stepsLeft - 1))
                     [[a, ch], [ch, b]]
                 modifySTRef' countRef (M.insertWith (+) ch 1)
-                newCount <- readSTRef countRef
-                modifySTRef' memoRef 
-                    (M.insert (val, stepsLeft) (oldCount `diff` newCount))
-            Just v -> modifySTRef' countRef (`add` v)
+                when (stepsLeft < numSteps) $ do
+                    newCount <- readSTRef countRef
+                    modifySTRef' memoRef 
+                        (M.insert cur (diff oldCount newCount))
+            Just m -> modifySTRef' countRef (`add` m)
 
 add :: Count -> Count -> Count
-add m1 m2 = foldl f m1 $ M.toList m2
+add m1 m2 = foldl' f m1 $ M.toList m2
     where f acc (k, v) = M.insertWith (+) k v acc
 
 diff :: Count -> Count -> Count
-diff m1 m2 = foldl f m1 $ M.toList m2
+diff m1 m2 = foldl' f m1 $ M.toList m2
     where f acc (k, v) = M.insertWith (-) k v acc
 
 countChars :: String -> Map Char Int
