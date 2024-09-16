@@ -17,9 +17,7 @@ type Memo = Map (String, Steps) Count
 
 data Tree a
     = Empty
-    | Node { value :: a
-           , stepsLeft :: Steps
-           , parent :: Tree a }
+    | Node { value :: a, stepsLeft :: Steps }
     deriving (Show)
 
 main = do
@@ -46,8 +44,7 @@ grow xs numSteps pairs = runST $ do
     countRef <- newSTRef $! countChars xs
     memoRef <- newSTRef $! M.empty
     mapM_ (\v -> grow' countRef memoRef Node
-            { value = v, stepsLeft = numSteps
-            , parent = Empty }) 
+            { value = v, stepsLeft = numSteps }) 
         (group' xs)
     readSTRef countRef
     where
@@ -56,16 +53,15 @@ grow xs numSteps pairs = runST $ do
     group' _ = []
 
     grow' :: STRef s Count -> STRef s Memo -> Tree String -> ST s ()
-    grow' _ _ cur@Node {stepsLeft = 0} = return ()
-    grow' countRef memoRef cur@Node {value = val@[a, b], stepsLeft} = do
+    grow' _ _ Node {stepsLeft = 0} = return ()
+    grow' countRef memoRef Node {value = val@[a, b], stepsLeft} = do
         oldCount <- readSTRef countRef
         mem <- readSTRef memoRef
         case M.lookup (val, stepsLeft) mem of
             Nothing -> do
                 let ch = pairs M.! val
                 mapM_ (\v -> grow' countRef memoRef Node
-                        { value = v, stepsLeft = stepsLeft - 1
-                        , parent = cur })
+                        { value = v, stepsLeft = stepsLeft - 1 })
                     [[a, ch], [ch, b]]
                 modifySTRef' countRef (M.insertWith (+) ch 1)
                 newCount <- readSTRef countRef
