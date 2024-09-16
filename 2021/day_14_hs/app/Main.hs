@@ -45,13 +45,12 @@ grow [] _ _ = M.empty
 grow xs numSteps pairs = runST $ do
     countRef <- newSTRef $! countChars xs
     memoRef <- newSTRef $! M.empty
-    mapM_ (f countRef memoRef) (group' xs)
+    mapM_ (\v -> grow' countRef memoRef Node
+            { value = v, stepsLeft = numSteps
+            , parent = Empty }) 
+        (group' xs)
     readSTRef countRef
     where
-    f :: STRef s Count -> STRef s Memo -> String -> ST s ()
-    f m mem value = grow' m mem Node
-        { value, stepsLeft = numSteps, parent = Empty}
-
     group' :: String -> [String]
     group' (a:b:xs) = [a, b] : group' (b : xs)
     group' _ = []
