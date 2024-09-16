@@ -1,91 +1,87 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Main where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Text.Regex.Posix
 import qualified Data.DList as D
-import Control.Monad.ST
+import Data.Foldable (foldl')
 import Data.STRef
+import Control.Monad.ST
+import Text.Regex.Posix
 
 type Steps = Int
 type Pairs = Map String Char
-type Occurences = Map Char Int
-type Memo = Map String Occurences
+type Count = Map Char Int
+type Memo = Map (String, Steps) Count
+
+data Tree a
+    = Empty
+    | Node { value :: a
+           , stepsLeft :: Steps
+           , parent :: Tree a }
+    deriving (Show)
 
 main = do
     contents <- lines <$> readFile "input.txt"
-    let pairs = foldl parse M.empty (drop 2 contents)
-        p1 = growTo 10 (head contents) pairs
-        p1Count = countChars p1
-        -- ST Monad practice :>
-        p2 = M.elems $ runST $ do
-            let polymer = growTo 10 p1 pairs
-            prev <- newSTRef M.empty
-            quant <- newSTRef $ M.fromListWith (+)
-                [(x, 1) | x <- polymer]
-            partTwo 20 polymer pairs quant prev
-            readSTRef quant
-
-    putStrLn "Runtime: ~23s"
+    let pairs = foldl' parse M.empty (drop 2 contents)
+        polymer = head contents
+        p1 = grow polymer 10 pairs
+        p2 = grow polymer 40 pairs
 
     putStr "Part One: "
-    print $ maximum p1Count - minimum p1Count
+    print $ maximum p1 - minimum p1
 
     putStr "Part Two: "
     print $ maximum p2 - minimum p2
-
-    return pairs
     where
     parse :: Pairs -> String -> Pairs
     parse acc v =
         let [[_, k, val]] = v =~ "(.*) -> (.*)" :: [[String]]
          in M.insert k (head val) acc
 
-    growTo :: Steps -> String -> Pairs -> String
-    growTo steps str pairs =
-        iterate (\s -> head s : fn s) str !! steps
-        where
-        fn (x:y:rest) =
-            let z = pairs M.! [x, y]
-             in z : y : fn (y : rest)
-        fn _ = []
+grow :: String -> Steps -> Pairs -> Count
+grow [] _ _ = M.empty
+grow xs numSteps pairs = runST $ do
+    countRef <- newSTRef $! countChars xs
+    memoRef <- newSTRef $! M.empty
+    mapM_ (f countRef memoRef) (group' xs)
+    readSTRef countRef
+    where
+    f :: STRef s Count -> STRef s Memo -> String -> ST s ()
+    f m mem value = grow' m mem Node
+        { value, stepsLeft = numSteps, parent = Empty}
 
-countChars :: String -> Map Char Int
-countChars = foldl f M.empty
-    where f acc v = M.insertWith (+) v 1 acc
+    group' :: String -> [String]
+    group' (a:b:xs) = [a, b] : group' (b : xs)
+    group' _ = []
 
-add :: Occurences -> Occurences -> Occurences
+    grow' :: STRef s Count -> STRef s Memo -> Tree String -> ST s ()
+    grow' _ _ cur@Node {stepsLeft = 0} = return ()
+    grow' countRef memoRef cur@Node {value = val@[a, b], stepsLeft} = do
+        oldCount <- readSTRef countRef
+        mem <- readSTRef memoRef
+        case M.lookup (val, stepsLeft) mem of
+            Nothing -> do
+                let ch = pairs M.! val
+                mapM_ (\v -> grow' countRef memoRef Node
+                        { value = v, stepsLeft = stepsLeft - 1
+                        , parent = cur })
+                    [[a, ch], [ch, b]]
+                modifySTRef' countRef (M.insertWith (+) ch 1)
+                newCount <- readSTRef countRef
+                modifySTRef' memoRef 
+                    (M.insert (val, stepsLeft) (oldCount `diff` newCount))
+            Just v -> modifySTRef' countRef (`add` v)
+
+add :: Count -> Count -> Count
 add m1 m2 = foldl f m1 $ M.toList m2
     where f acc (k, v) = M.insertWith (+) k v acc
 
-partTwo :: Steps -> String -> Pairs -> STRef s Occurences -> STRef s Memo -> ST s ()
-partTwo steps (a:b:xs) pairs q p = do
-    prev <- readSTRef p
-    let str = [a, b]
-        ch = pairs M.! str
-    case M.lookup str prev of
-        Nothing -> do
-            m <- newSTRef M.empty
-            m' <- grow m str steps
-            modifySTRef' q (`add` m')
-            modifySTRef' p (M.insert str m')
-        Just v -> do
-            modifySTRef' q (`add` v)
+diff :: Count -> Count -> Count
+diff m1 m2 = foldl f m1 $ M.toList m2
+    where f acc (k, v) = M.insertWith (-) k v acc
 
-    partTwo steps (b : xs) pairs q p
-
-    where
-    grow :: STRef s Occurences -> String -> Int -> ST s Occurences
-    grow m _ 0 = readSTRef m
-    grow m s steps = do
-        s' <- growStr m s $ D.fromList [head s]
-        grow m (D.toList s') (steps - 1)
-
-    growStr :: STRef s Occurences -> String -> D.DList Char -> ST s (D.DList Char)
-    growStr m (x:y:ys) prev = do
-        let z = pairs M.! [x, y]
-        modifySTRef' m (M.insertWith (+) z 1)
-        growStr m (y:ys) (prev `D.snoc` z `D.snoc` y)
-    growStr _ _ prev = return prev
-
-partTwo _ _ _ _ _ = return ()
+countChars :: String -> Map Char Int
+countChars = foldl' f M.empty
+    where f acc v = M.insertWith (+) v 1 acc
