@@ -27,6 +27,7 @@ data Node = Node
 instance Eq Node where
     Node {name = n1} == Node {name = n2} = n1 == n2
 
+-- for insert fn
 instance Ord Node where
     Node {dist = d1} <= Node {dist = d2} = d1 <= d2
 
