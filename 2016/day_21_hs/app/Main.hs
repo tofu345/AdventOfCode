@@ -12,10 +12,10 @@ main = do
     steps <- map words . lines <$> readFile "input.txt"
 
     putStr "Part One: "
-    print $ foldl' p1 "abcdefgh" steps
+    putStrLn $ foldl' p1 "abcdefgh" steps
 
     putStr "Part Two: "
-    print $ foldl' p2 "fbgdceah" (reverse steps)
+    putStrLn $ foldl' p2 "fbgdceah" (reverse steps)
 
 p1 :: String -> [String] -> String
 p1 pass ["swap", "position", x, "with", "position", y] =
