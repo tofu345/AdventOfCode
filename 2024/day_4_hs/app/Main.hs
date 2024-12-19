@@ -1,97 +1,56 @@
 module Main where
 
-import Data.List (nub)
-import Data.Array
-import Data.Bifunctor
-import Prelude hiding ((!!))
+import Data.Foldable (foldl')
+import qualified Data.Map.Strict as M
+import Data.Map.Strict (Map)
+import Control.Monad (guard)
+import Data.Maybe (fromMaybe)
 
-type Arr = Array Int (Array Int Char)
-type Index = (Int, Int)
-data Dir = N | NW | W | SW | S | SE | E | NE deriving (Show, Enum, Eq)
+type Point = (Int, Int)
+type HashMap = Map Point Char
 
 main :: IO ()
 main = do
     contents <- lines <$> readFile "input.txt"
-    let len = length (head contents)
-        f = listArray (0, len - 1)
-        arr = listArray (0, length contents - 1)
-            $ map f contents
-    run arr (snd (bounds $ arr ! 0), snd (bounds arr))
+    -- great stuff: https://www.reddit.com/r/adventofcode/comments/zkc974/python_data_structures_for_2d_grids/
+    let hmap = M.fromList [ ((x, y), val) | (y, line) <- zip [0..] contents,
+                                            (x, val) <- zip [0..] line ]
+    run hmap (length (head contents), length contents)
 
-(!!) :: Arr -> Index -> Char
-arr !! (x, y) = let row = arr ! y
-                 in row ! x
-
-run :: Arr -> (Int, Int) -> IO ()
-run arr (xMax, yMax) = do
+run :: HashMap -> Point -> IO ()
+run hmap (xMax, yMax) = do
     let start = (0, 0)
-        matches = p1 (Just start) []
+        keys' = M.keys hmap
 
     putStr "Part One: "
-    print $ length matches
-
-    let matches2 = p2 (Just start) []
+    print $ foldl' p1 0 keys'
 
     putStr "Part Two: "
-    print $ length matches2
-
+    print $ foldl' p2 0 keys'
     where
-    p1 :: Maybe Index -> [(Dir, Index)] -> [(Dir, Index)]
-    p1 Nothing ms = ms
-    p1 (Just i) ms =
-        let ms' = if arr !! i == 'X'
-                      then [(fst adj, i) | adj <- adjacent i, search i adj] ++ ms
-                      else ms
-         in p1 (next i) ms'
+    p1 :: Int -> Point -> Int
+    p1 acc p | M.lookup p hmap == Just 'X' = 
+                 acc + length (filter (== "XMAS") (adjacent p))
+             | otherwise = acc
 
-    search :: Index -> (Dir, Index) -> Bool
-    search cur (d, next)
-        | not $ inBounds next = False
-        | otherwise =
-            let c = arr !! cur
-                n = arr !! next
-             in case (c, n) of
-                    v | v `elem` [('X', 'M'), ('M', 'A')] ->
-                        search next (dir' next d)
-                    ('A', 'S') -> True
-                    _ -> False
+    adjacent p = do
+        (x', y') <- [ (-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1) ]
+        let f (x, y) = (x + x', y + y')
+            diag = take 4 $ iterate f p
+        guard (all (`M.member` hmap) diag)
+        [(M.!) hmap <$> diag]
 
-    next :: Index -> Maybe Index
-    next (x, y) | x + 1 <= xMax = Just (x + 1, y)
-                | y + 1 <= yMax = Just (0, y + 1)
-                | otherwise = Nothing
+    p2 :: Int -> Point -> Int
+    p2 acc p 
+        | M.lookup p hmap == Just 'A' = 
+            let (m1, m2) = splitAt 3 (adjX p)
+                mas = ["MAS", "SAM"]
+             in if m1 `elem` mas && m2 `elem` mas
+                    then acc + 1
+                    else acc
+        | otherwise = acc
 
-    adjacent pos = dir' pos <$> enumFrom N
-
-    dir' :: Index -> Dir -> (Dir, Index)
-    dir' (x, y) N = (N, (x, y - 1))
-    dir' (x, y) W = (W, (x + 1, y))
-    dir' (x, y) S = (S, (x, y + 1))
-    dir' (x, y) E = (E, (x - 1, y))
-    dir' (x, y) NE = (NE, (x - 1, y - 1))
-    dir' (x, y) SW = (SW, (x + 1, y + 1))
-    dir' (x, y) NW = (NW, (x + 1, y - 1))
-    dir' (x, y) SE = (SE, (x - 1, y + 1))
-
-    inBounds (x, y) = x >= 0 && y >= 0 && x <= xMax && y <= yMax
-
-    p2 :: Maybe Index -> [Index] -> [Index]
-    p2 Nothing ms = ms
-    p2 (Just i) ms =
-        let v = [i | adj <- adjacent2 i, valid (snd <$> adj), isX (fst <$> adj)]
-            ms' = if arr !! i == 'A' && even (length v)
-                      then nub v ++ ms
-                      else ms
-         in p2 (next i) ms'
-
-    valid s = s `elem` ["MS", "SM"]
-
-    xmas' = [[NW, SE], [SW, NE]]
-
-    isX dirs = dirs `elem` xmas'
-
-    adjacent2 pos = rep $ filter f $ map (dir' pos <$>) xmas'
-        where
-        f [(_, i1), (_, i2)] = inBounds i1 && inBounds i2
-        rep :: [[(Dir, Index)]] -> [[(Dir, Char)]]
-        rep xs = map (second (arr !!)) <$> xs
+    adjX :: Point -> [Char]
+    adjX (x, y) = fromMaybe []
+                $ mapM (`M.lookup` hmap)
+                [(x - 1, y - 1), (x, y), (x + 1, y + 1), (x + 1, y - 1), (x, y), (x - 1, y + 1)]
