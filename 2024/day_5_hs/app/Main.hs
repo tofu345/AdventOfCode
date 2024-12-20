@@ -32,7 +32,7 @@ run rules upds = do
 
     inOrder :: [Int] -> Bool
     inOrder (n:ns) | Just rls <- M.lookup n rules =
-                       all (`notElem` rules M.! n) ns && inOrder ns
+                       all (`notElem` rls) ns && inOrder ns
                    | otherwise = inOrder ns
     inOrder [] = True
 
