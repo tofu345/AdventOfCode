@@ -4,7 +4,7 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Data.List (partition, delete, find)
 import Data.List.Split (splitOn, wordsBy)
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (mapMaybe)
 
 main :: IO ()
 main = do
