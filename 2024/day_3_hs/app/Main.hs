@@ -23,15 +23,15 @@ main = do
     sum' :: Int -> [String] -> Int
     sum' acc [_, l, r] = acc + read l * read r
 
-    takeTill :: String -> [String] -> [String]
-    takeTill s [] = []
-    takeTill s (c:cs) | s == c = cs
-                      | otherwise = takeTill s cs
+    dropTill :: String -> [String] -> [String]
+    dropTill s [] = []
+    dropTill s (c:cs) | s == c = cs
+                      | otherwise = dropTill s cs
 
     filter' :: [String] -> String
     filter' = f []
         where
-        f acc ("don't()":xs) = f acc (takeTill "do()" xs)
+        f acc ("don't()":xs) = f acc (dropTill "do()" xs)
         f acc ("do()":xs) = f acc xs
         f acc (str:xs) = f (str ++ ' ' : acc) xs
         f acc [] = acc
