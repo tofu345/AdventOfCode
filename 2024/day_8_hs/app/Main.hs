@@ -4,7 +4,6 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Data.Char (isAlphaNum)
 import Data.List
-import Data.Function (on)
 
 main :: IO ()
 main = do
