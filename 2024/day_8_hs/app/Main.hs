@@ -9,12 +9,11 @@ main :: IO ()
 main = do
     contents <- lines <$> readFile "input.txt"
 
-    let hmap = M.fromList [ ((x, y), v) | (y, line) <- zip [0..] contents
-                                        , (x, v) <- zip [0..] line ]
-        bounds = (length (head contents), length contents)
-        -- feels like such shit code
-        antennas = M.elems . M.fromListWith (++) . helper . M.toList
-                 $ M.filter isAlphaNum hmap
+    let bounds = (length (head contents), length contents)
+        antennas = M.elems . M.fromListWith (++)
+                 $ [ (v, [(x, y)]) | (y, line) <- zip [0..] contents
+                                   , (x, v) <- zip [0..] line
+                                   , isAlphaNum v ]
 
     putStr "Part One: "
     print $ length $ nub $ filter (inBounds bounds) $ p1 antennas
