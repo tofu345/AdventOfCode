@@ -23,10 +23,6 @@ main = do
 
 inBounds (xMax, yMax) (x, y) = x >= 0 && x < xMax && y >= 0 && y < yMax
 
-helper :: [(a, b)] -> [(b, [a])]
-helper ((a, b):xs) = (b, [a]) : helper xs
-helper [] = []
-
 type Pos = (Int, Int)
 
 subtractPos :: Pos -> Pos -> Pos
