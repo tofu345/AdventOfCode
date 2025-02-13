@@ -55,7 +55,6 @@ solve = sum . mapMaybe f
         let stepsA = (y / yB - x / xB) / (yA / yB - xA / xB)
             stepsB = (x - xA * stepsA) / xB
             (sA, sB) = (trunc stepsA, trunc stepsB)
-            tokens = sA * 3 + sB
          in if xA * sA + xB * sB == x && yA * sA + yB * sB == y
                 then Just $ round $ sA * 3 + sB
                 else Nothing
