@@ -1,0 +1,4 @@
+snapshot: ghc-9.8.2
+
+packages:
+- .
