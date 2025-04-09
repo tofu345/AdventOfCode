@@ -1,9 +1,13 @@
 module Main (main) where
 
-import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Data.List (find)
+import qualified Data.Map.Strict as M
+import qualified Data.Set as S
+import Data.List (find, nub)
 import Data.Foldable (foldl')
+import Data.Bifunctor (first)
+import Data.Maybe (isJust, fromMaybe)
+import Control.Monad
 
 main :: IO ()
 main = do
@@ -12,24 +16,32 @@ main = do
         moves = concat $ drop 1 xs
         hmap = M.fromList [ ((x, y), v) | (y, line) <- zip [0..] warehouse
                                         , (x, v) <- zip [0..] line
-                                        , v /= '.' ] :: Map Pos Dir
+                                        , v /= '.' ] :: Map Pos Char
         start = case find ((== '@') . snd) (M.toList hmap) of
                 Just (p, _) -> p
                 Nothing -> error "start position not found"
-        score = sum . map (\((x, y), _) -> 100 * y + x)
-
-        (_, hmap1) = foldl' simulate (start, hmap) moves
-        ans1 = score $ filter ((=='O') . snd) (M.toList hmap1)
+        (_, hmap1) = foldl' partOne (start, hmap) moves
 
     putStr "Part One: "
-    print ans1
+    print (score hmap1)
 
-    -- return (start, hmap)
+    let doubleX (x, y) = (x * 2, y)
+        start' = doubleX start
+        hmap' = M.mapKeysMonotonic doubleX hmap
+        (_, hmap2) = foldl' partTwo (start', hmap') moves
+
+    putStr "Part Two: "
+    print (score hmap2)
+
+    -- display hmap
+    -- display2 hmap2
+    where
+    score = sum . map (\(x, y) -> 100 * y + x) . M.keys . M.filter (=='O')
 
 type Pos = (Int, Int)
 type Dir = Char
 
--- display :: Map Pos Dir -> IO ()
+-- display :: Map Pos Char -> IO ()
 -- display hmap = do
 --     let ((xMax, yMax), _) = M.findMax hmap
 --     forM_ [0..yMax] $ \y -> do
@@ -38,31 +50,94 @@ type Dir = Char
 --                 Just v -> putChar v
 --                 Nothing -> putChar ' '
 --         putStrLn ""
+--
+-- display2 :: Map Pos Char -> IO ()
+-- display2 hmap = do
+--     let ((xMax, yMax), _) = M.findMax hmap
+--     forM_ [0..yMax] $ \y -> do
+--         forM_ [0..xMax] $ \x -> do
+--             case M.lookup (x, y) hmap of
+--                 Just 'O' -> putChar '['
+--                 Just '#' -> putChar '#'
+--                 Just '@' -> putChar '@'
+--                 Nothing ->
+--                     let prev = M.lookup (x - 1, y) hmap
+--                      in case prev of
+--                          Just '#' -> putChar '#'
+--                          Just 'O' -> putChar ']'
+--                          _ -> putChar ' '
+--         putStrLn ""
 
-moveIn :: Dir -> Pos -> Pos
-moveIn '<' (x, y) = (x - 1, y)
-moveIn '>' (x, y) = (x + 1, y)
-moveIn 'v' (x, y) = (x, y + 1)
-moveIn '^' (x, y) = (x, y - 1)
-moveIn _ _ = error "invalid direction"
+posIn :: Dir -> Pos -> Pos
+posIn '<' (x, y) = (x - 1, y)
+posIn '>' (x, y) = (x + 1, y)
+posIn 'v' (x, y) = (x, y + 1)
+posIn '^' (x, y) = (x, y - 1)
+posIn _ _ = error "invalid direction"
 
-furthestNonBox :: Dir -> Pos -> Map Pos Char -> (Char, Pos)
-furthestNonBox d p hmap = f p
-    where
-    f pos = let pos' = moveIn d pos
-             in case M.lookup pos' hmap of
-                 Just v | v == 'O' -> f pos'
-                 Just v -> (v, pos')
-                 _ -> ('.', pos')
-
-simulate :: (Pos, Map Pos Char) -> Char -> (Pos, Map Pos Char)
-simulate (cur, hmap) dir =
-    let (ch, pos) = furthestNonBox dir cur hmap
+partOne :: (Pos, Map Pos Char) -> Dir -> (Pos, Map Pos Char)
+partOne (cur, hmap) dir =
+    let (ch, pos) = furthestNonBox
      in case ch of
         '#' -> (cur, hmap)
-        '.' -> let next = moveIn dir cur
-                in if pos == next then (next, moveTo next hmap)
-                   else (next, M.insert pos 'O' . moveTo next $ hmap)
+        '.' -> let next = posIn dir cur
+                in if pos == next then (next, moveCurTo next hmap)
+                   else (next, M.insert pos 'O' . moveCurTo next $ hmap)
         _ -> error "unreachable"
     where
-    moveTo next = M.insert next '@' . M.delete cur
+    moveCurTo next = M.insert next '@' . M.delete cur
+    furthestNonBox = f cur
+        where
+        f p = let p' = posIn dir p
+               in case M.lookup p' hmap of
+                   Just 'O' -> f p'
+                   Just _ -> ('#', p')
+                   Nothing -> ('.', p')
+
+partTwo :: (Pos, Map Pos Char) -> Dir -> (Pos, Map Pos Char)
+partTwo (cur, hmap) dir =
+     case moveableBoxesIn dir cur hmap of
+        Nothing -> (cur, hmap) -- wall
+        Just boxes ->
+            let next = posIn dir cur
+             in (next, moveCurTo next . moveBoxes boxes $ hmap)
+    where
+    moveCurTo next = M.insert next '@' . M.delete cur
+    moveBoxes boxes hmap' =
+        let movedBoxes = S.fromList $ posIn dir <$> boxes
+            hmap'' = foldl' f hmap' movedBoxes
+         in foldl' g hmap'' $ S.difference (S.fromList boxes) movedBoxes
+    f hmap' p = M.insert p 'O' hmap'
+    g hmap' p = M.delete p hmap'
+
+-- Good luck future me understanding how this works
+moveableBoxesIn dir cur hmap
+    | dir `elem` ['<', '>'] = leftright cur []
+    | otherwise = updown [cur] []
+    where
+    leftright pos path = case next of
+        ('.', _) -> Just path
+        ('O', p) -> let p' = if dir == '>' then posIn dir p else p
+                     in leftright p' (p : path)
+        _ -> Nothing
+        where
+        next = let (_:ps) = take 3 $ iterate (posIn dir) pos
+                   chs = fromMaybe '.' . (hmap M.!?) <$> ps
+                in if dir == '>' then (head chs, head ps)
+                   else case chs of ['.', v] -> (v, last ps)
+                                    _ -> (head chs, head ps)
+
+    -- This could do with some visited tracking, but it works fine without
+    updown [] path = Just $ nub path
+    updown (pos:xs) path =
+        let pos1 = posIn dir pos
+            ch1 = M.lookup pos1 hmap
+            pos2 = if isJust ch1 then first (+1) pos1
+                   else first (subtract 1) pos1
+         in case ch1 of
+            Just 'O' -> updown (pos1:pos2:xs) (pos1:path)
+            Just _ -> Nothing
+            Nothing -> case M.lookup pos2 hmap of
+                Nothing -> updown xs path
+                Just 'O' -> updown (pos1:pos2:xs) (pos2:path)
+                Just _ -> Nothing
