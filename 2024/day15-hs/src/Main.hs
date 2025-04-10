@@ -132,7 +132,9 @@ moveableBoxesIn dir pos hmap
     updown (cur:xs) path =
         let p = posIn dir cur
          in case valAt p of
-            'O' -> updown (p : first (+1) p : xs) (p:path)
+            'O' -> let p' = first (+1) p
+                    in p' `seq` updown (p : p' : xs) (p:path)
+
             '.' -> let p' = first (subtract 1) p
                     in case valAt p' of 'O' -> updown (p':p:xs) (p':path)
                                         '#' -> Nothing
