@@ -3,10 +3,10 @@ module Main (main) where
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
-import Data.List (find, nub)
+import Data.List (find)
 import Data.Foldable (foldl')
 import Data.Bifunctor (first)
-import Data.Maybe (isJust, fromMaybe)
+import Data.Maybe (fromMaybe)
 import Control.Monad
 
 main :: IO ()
@@ -111,33 +111,30 @@ partTwo (cur, hmap) dir =
     g hmap' p = M.delete p hmap'
 
 -- Good luck future me understanding how this works
-moveableBoxesIn dir cur hmap
-    | dir `elem` ['<', '>'] = leftright cur []
-    | otherwise = updown [cur] []
+moveableBoxesIn :: Dir -> Pos -> Map Pos Char -> Maybe [Pos]
+moveableBoxesIn dir pos hmap
+    | dir `elem` ['<', '>'] = leftright pos []
+    | otherwise = updown [pos] []
     where
-    leftright pos path = case next of
+    valAt = fromMaybe '.' . (hmap M.!?)
+    leftright cur path = case next of
         ('.', _) -> Just path
         ('O', p) -> let p' = if dir == '>' then posIn dir p else p
                      in leftright p' (p : path)
         _ -> Nothing
         where
-        next = let (_:ps) = take 3 $ iterate (posIn dir) pos
-                   chs = fromMaybe '.' . (hmap M.!?) <$> ps
-                in if dir == '>' then (head chs, head ps)
-                   else case chs of ['.', v] -> (v, last ps)
-                                    _ -> (head chs, head ps)
-
-    -- This could do with some visited tracking, but it works fine without
-    updown [] path = Just $ nub path
-    updown (pos:xs) path =
-        let pos1 = posIn dir pos
-            ch1 = M.lookup pos1 hmap
-            pos2 = if isJust ch1 then first (+1) pos1
-                   else first (subtract 1) pos1
-         in case ch1 of
-            Just 'O' -> updown (pos1:pos2:xs) (pos1:path)
-            Just _ -> Nothing
-            Nothing -> case M.lookup pos2 hmap of
-                Nothing -> updown xs path
-                Just 'O' -> updown (pos1:pos2:xs) (pos2:path)
-                Just _ -> Nothing
+        next = let p = posIn dir cur
+                   v = valAt p
+                in case () of _ | dir == '>' -> (v, p)
+                                | v == '.' -> let p' = posIn dir p in (valAt p', p')
+                                | otherwise -> (v, p)
+    updown [] path = Just path
+    updown (cur:xs) path =
+        let p = posIn dir cur
+         in case valAt p of
+            'O' -> updown (p : first (+1) p : xs) (p:path)
+            '.' -> let p' = first (subtract 1) p
+                    in case valAt p' of 'O' -> updown (p':p:xs) (p':path)
+                                        '#' -> Nothing
+                                        _ -> updown xs path
+            _ -> Nothing
