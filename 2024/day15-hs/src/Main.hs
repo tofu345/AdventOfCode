@@ -11,7 +11,7 @@ import Control.Monad
 
 main :: IO ()
 main = do
-    contents <- lines <$> readFile "input.txt"
+    contents <- lines <$> readFile "test.txt"
     let (warehouse, xs) = break null contents
         moves = concat $ drop 1 xs
         hmap = M.fromList [ ((x, y), v) | (y, line) <- zip [0..] warehouse
@@ -41,32 +41,32 @@ main = do
 type Pos = (Int, Int)
 type Dir = Char
 
--- display :: Map Pos Char -> IO ()
--- display hmap = do
---     let ((xMax, yMax), _) = M.findMax hmap
---     forM_ [0..yMax] $ \y -> do
---         forM_ [0..xMax] $ \x -> do
---             case M.lookup (x, y) hmap of
---                 Just v -> putChar v
---                 Nothing -> putChar ' '
---         putStrLn ""
---
--- display2 :: Map Pos Char -> IO ()
--- display2 hmap = do
---     let ((xMax, yMax), _) = M.findMax hmap
---     forM_ [0..yMax] $ \y -> do
---         forM_ [0..xMax] $ \x -> do
---             case M.lookup (x, y) hmap of
---                 Just 'O' -> putChar '['
---                 Just '#' -> putChar '#'
---                 Just '@' -> putChar '@'
---                 Nothing ->
---                     let prev = M.lookup (x - 1, y) hmap
---                      in case prev of
---                          Just '#' -> putChar '#'
---                          Just 'O' -> putChar ']'
---                          _ -> putChar ' '
---         putStrLn ""
+display :: Map Pos Char -> IO ()
+display hmap = do
+    let ((xMax, yMax), _) = M.findMax hmap
+    forM_ [0..yMax] $ \y -> do
+        forM_ [0..xMax] $ \x -> do
+            case M.lookup (x, y) hmap of
+                Just v -> putChar v
+                Nothing -> putChar ' '
+        putStrLn ""
+
+display2 :: Map Pos Char -> IO ()
+display2 hmap = do
+    let ((xMax, yMax), _) = M.findMax hmap
+    forM_ [0..yMax] $ \y -> do
+        forM_ [0..xMax] $ \x -> do
+            case M.lookup (x, y) hmap of
+                Just 'O' -> putChar '['
+                Just '#' -> putChar '#'
+                Just '@' -> putChar '@'
+                Nothing ->
+                    let prev = M.lookup (x - 1, y) hmap
+                     in case prev of
+                         Just '#' -> putChar '#'
+                         Just 'O' -> putChar ']'
+                         _ -> putChar ' '
+        putStrLn ""
 
 posIn :: Dir -> Pos -> Pos
 posIn '<' (x, y) = (x - 1, y)
@@ -83,7 +83,6 @@ partOne (cur, hmap) dir =
         '.' -> let next = posIn dir cur
                 in if pos == next then (next, moveCurTo next hmap)
                    else (next, M.insert pos 'O' . moveCurTo next $ hmap)
-        _ -> error "unreachable"
     where
     moveCurTo next = M.insert next '@' . M.delete cur
     furthestNonBox = f cur
@@ -91,8 +90,9 @@ partOne (cur, hmap) dir =
         f p = let p' = posIn dir p
                in case M.lookup p' hmap of
                    Just 'O' -> f p'
-                   Just _ -> ('#', p')
+                   Just '#' -> ('#', p')
                    Nothing -> ('.', p')
+                   _ -> error "invalid data"
 
 partTwo :: (Pos, Map Pos Char) -> Dir -> (Pos, Map Pos Char)
 partTwo (cur, hmap) dir =
@@ -126,7 +126,8 @@ moveableBoxesIn dir pos hmap
         next = let p = posIn dir cur
                    v = valAt p
                 in case () of _ | dir == '>' -> (v, p)
-                                | v == '.' -> let p' = posIn dir p in (valAt p', p')
+                                | v == '.' -> let p' = posIn dir p 
+                                               in (valAt p', p')
                                 | otherwise -> (v, p)
     updown [] path = Just path
     updown (cur:xs) path =
