@@ -66,6 +66,7 @@ display2 hmap = do
                          Just '#' -> putChar '#'
                          Just 'O' -> putChar ']'
                          _ -> putChar ' '
+                _ -> error "invalid data"
         putStrLn ""
 
 posIn :: Dir -> Pos -> Pos
@@ -83,6 +84,7 @@ partOne (cur, hmap) dir =
         '.' -> let next = posIn dir cur
                 in if pos == next then (next, moveCurTo next hmap)
                    else (next, M.insert pos 'O' . moveCurTo next $ hmap)
+        _ -> error "invalid data"
     where
     moveCurTo next = M.insert next '@' . M.delete cur
     furthestNonBox = f cur
@@ -90,9 +92,8 @@ partOne (cur, hmap) dir =
         f p = let p' = posIn dir p
                in case M.lookup p' hmap of
                    Just 'O' -> f p'
-                   Just '#' -> ('#', p')
+                   Just _ -> ('#', p')
                    Nothing -> ('.', p')
-                   _ -> error "invalid data"
 
 partTwo :: (Pos, Map Pos Char) -> Dir -> (Pos, Map Pos Char)
 partTwo (cur, hmap) dir =
@@ -126,7 +127,7 @@ moveableBoxesIn dir pos hmap
         next = let p = posIn dir cur
                    v = valAt p
                 in case () of _ | dir == '>' -> (v, p)
-                                | v == '.' -> let p' = posIn dir p 
+                                | v == '.' -> let p' = posIn dir p
                                                in (valAt p', p')
                                 | otherwise -> (v, p)
     updown [] path = Just path

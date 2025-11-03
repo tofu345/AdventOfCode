@@ -84,7 +84,7 @@ neighbours (x, y) =
     , (x - 1, y)
     ]
 
--- | returns an Node of endPos if there is a valid path.
+-- | returns the Node of endPos if there is a valid path.
 aStar :: Grid -> Maybe Node
 aStar grid = do
     let start = (0, 0)
@@ -133,7 +133,7 @@ tracePathFrom node = case parent node of
     Just parent' -> position node : tracePathFrom parent'
 
 -- | recalculate aStar path when a corrupted byte falls on a position in the
---   path. if aStar fails return the corrupted byte.
+--   path. if aStar fails, return the corrupted byte it failed at.
 partTwo :: Set Pos -> [Pos] -> Grid -> Pos
 partTwo _ [] _ = error "no byte cuts off exit"
 partTwo path (pos : corrupted) grid = do
@@ -149,7 +149,7 @@ partTwo path (pos : corrupted) grid = do
 printGrid :: Grid -> IO ()
 printGrid grid =
     -- swap (x, y) to (y, x) because indices in grid are represented in the
-    -- fourth quadrant printed in the first.
+    -- fourth quadrant, but printed in the first.
     let ps = map swap positions
      in print' ps (fst endPos + 1)
     where
