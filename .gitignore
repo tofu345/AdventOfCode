@@ -1,4 +1,7 @@
-target/
 test*.txt
 input*.txt
+
+target/
 .stack-work/
+stack.yaml.lock
+dist-newstyle/
