@@ -10,6 +10,7 @@ import Data.List.Split (splitOn)
 import Data.Tuple (swap)
 import Data.List (insertBy, find)
 import Data.Foldable (foldl')
+import Data.Maybe (fromMaybe)
 
 type Pos = (Int, Int)
 
@@ -40,15 +41,16 @@ main = do
                (M.fromList $ (,Safe) <$> positions)
                fallen
 
-        nodes = aStar grid
-        path = tracePathFrom endPos nodes
+        endNode = fromMaybe (error $ "no path after " ++ show numFallen ++ " bytes")
+                $ aStar grid
+        path = tracePathFrom endNode
 
     -- printGrid $ foldl (\grid' p -> M.insert p Traversed grid') grid path
 
     putStr "Part One: "
-    print (length $ tail path) -- path starts from [endPos]
+    print (length path)
 
-    let cutOffByte = partTwo (S.fromList path) nodes rest grid
+    let cutOffByte = partTwo (S.fromList path) rest grid
 
     putStr "Part Two: "
     print cutOffByte
@@ -60,7 +62,8 @@ main = do
         _ -> error $ "invalid data :" ++ str
 
 data Node = Node
-    { parent :: Pos
+    { parent :: Maybe Node
+    , position :: Pos
     , cost :: Double
     } deriving Show
 
@@ -81,13 +84,13 @@ neighbours (x, y) =
     , (x - 1, y)
     ]
 
--- | returns an empty Nodes if aStar does not find a path.
-aStar :: Grid -> Nodes
+-- | returns an Node of endPos if there is a valid path.
+aStar :: Grid -> Maybe Node
 aStar grid = do
     let start = (0, 0)
         closed = S.empty
         open = [(0.0, start)]
-        nodes = M.fromList [(start, Node (-1, -1) 0.0)]
+        nodes = M.fromList [(start, Node Nothing start 0.0)]
      in run closed open nodes
     where
     euclideanCost :: Pos -> Double
@@ -95,19 +98,19 @@ aStar grid = do
         let sq a = fromIntegral $ a * a
          in sqrt $ sq (x - fst endPos) * sq (y - snd endPos)
 
-    run :: Set Pos -> Queue -> Nodes -> Nodes
-    run _ [] _ = M.empty
+    run :: Set Pos -> Queue -> Nodes -> Maybe Node
+    run _ [] _ = Nothing
     run closed ((_, pos) : queue) nodes = do
         let adjacent = filter valid $ neighbours pos
             curNode = nodes M.! pos
         case find (== endPos) adjacent of
             Nothing ->
                 let (queue', nodes') =
-                        foldl' (update pos curNode) (queue, nodes) adjacent
+                        foldl' (update curNode) (queue, nodes) adjacent
                     closed' = S.insert pos closed
                  in run closed' queue' nodes'
 
-            _ -> M.insert endPos (Node pos 0.0) nodes
+            _ -> Just $ Node (Just curNode) endPos 0.0
         where
         valid p = case grid M.!? p of
                 Just Safe -> S.notMember p closed
@@ -115,38 +118,33 @@ aStar grid = do
 
     -- | update node at [newPos] if exists with new cost if new cost is less
     --   than its current cost
-    update parentPos parentNode (queue, nodes) newPos =
+    update parentNode (queue, nodes) newPos =
         let newCost = cost parentNode + euclideanCost newPos + 1
          in case nodes M.!? newPos of
-            Just (Node _ prevCost) | newCost > prevCost -> (queue, nodes)
-            _ -> let newNode = Node parentPos newCost
+            Just (Node _ _ prevCost) | newCost > prevCost -> (queue, nodes)
+            _ -> let newNode = Node (Just parentNode) newPos newCost
                      queue' = insert' queue newPos newCost
                      nodes' = M.insert newPos newNode nodes
                   in (queue', nodes')
 
-tracePathFrom :: Pos -> Nodes -> [Pos]
-tracePathFrom end nodes = trace' end
-    where
-    trace' cur = case M.lookup cur nodes of
-        Nothing -> []
-        Just node ->
-            let parent' = parent node
-            in cur : if parent' == (-1, -1) then []
-                     else trace' parent'
+tracePathFrom :: Node -> [Pos]
+tracePathFrom node = case parent node of
+    Nothing -> []
+    Just parent' -> position node : tracePathFrom parent'
 
 -- | recalculate aStar path when a corrupted byte falls on a position in the
 --   path. if aStar fails return the corrupted byte.
-partTwo :: Set Pos -> Nodes -> [Pos] -> Grid -> Pos
-partTwo _ _ [] _ = error "no byte cuts off exit"
-partTwo path nodes (pos : corrupted) grid = do
+partTwo :: Set Pos -> [Pos] -> Grid -> Pos
+partTwo _ [] _ = error "no byte cuts off exit"
+partTwo path (pos : corrupted) grid = do
     let grid' = M.insert pos Corrupted grid
     if S.notMember pos path
-        then partTwo path nodes corrupted grid'
-        else do
-            let nodes' = aStar grid'
-            if null nodes' then pos
-            else let path' = tracePathFrom endPos nodes'
-                  in partTwo (S.fromList path') nodes' corrupted grid'
+        then partTwo path corrupted grid'
+        else case aStar grid' of
+            Nothing -> pos
+            Just endNode ->
+                let path' = tracePathFrom endNode
+                 in partTwo (S.fromList path') corrupted grid'
 
 printGrid :: Grid -> IO ()
 printGrid grid =
