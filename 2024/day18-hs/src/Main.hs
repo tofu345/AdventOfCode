@@ -35,11 +35,11 @@ main :: IO ()
 main = do
     contents <- lines <$> readFile "input.txt"
     let corrupted = map strToPos contents
-        (fallen, rest) = splitAt numFallen corrupted
+        (initial, rest) = splitAt numFallen corrupted
         grid = foldl
                (\grid' p -> M.insert p Corrupted grid')
                (M.fromList $ (,Safe) <$> positions)
-               fallen
+               initial
 
         endNode = fromMaybe (error $ "no path after " ++ show numFallen ++ " bytes")
                 $ aStar grid
@@ -136,20 +136,20 @@ tracePathFrom node = case parent node of
 --   path. if aStar fails, return the corrupted byte it failed at.
 partTwo :: Set Pos -> [Pos] -> Grid -> Pos
 partTwo _ [] _ = error "no byte cuts off exit"
-partTwo path (pos : corrupted) grid = do
+partTwo path (pos : rest) grid = do
     let grid' = M.insert pos Corrupted grid
     if S.notMember pos path
-        then partTwo path corrupted grid'
+        then partTwo path rest grid'
         else case aStar grid' of
             Nothing -> pos
             Just endNode ->
                 let path' = tracePathFrom endNode
-                 in partTwo (S.fromList path') corrupted grid'
+                 in partTwo (S.fromList path') rest grid'
 
 printGrid :: Grid -> IO ()
 printGrid grid =
     -- swap (x, y) to (y, x) because indices in grid are represented in the
-    -- fourth quadrant, but printed in the first.
+    -- first quadrant, but printed in the fourth.
     let ps = map swap positions
      in print' ps (fst endPos + 1)
     where
