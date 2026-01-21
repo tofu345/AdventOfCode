@@ -118,13 +118,13 @@ aStar grid = do
 
     -- | update node at [newPos] if exists with new cost if new cost is less
     --   than its current cost
-    update parentNode (queue, nodes) newPos =
-        let newCost = cost parentNode + euclideanCost newPos + 1
-         in case nodes M.!? newPos of
+    update parentNode (queue, nodes) pos =
+        let newCost = cost parentNode + euclideanCost pos + 1
+         in case nodes M.!? pos of
             Just (Node _ _ prevCost) | newCost > prevCost -> (queue, nodes)
-            _ -> let newNode = Node (Just parentNode) newPos newCost
-                     queue' = insert' queue newPos newCost
-                     nodes' = M.insert newPos newNode nodes
+            _ -> let newNode = Node (Just parentNode) pos newCost
+                     queue' = insert' queue pos newCost
+                     nodes' = M.insert pos newNode nodes
                   in (queue', nodes')
 
 tracePathFrom :: Node -> [Pos]
