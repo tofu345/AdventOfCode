@@ -37,7 +37,7 @@ int main(void)
 
     long p1 = 0;
     long p2 = 0;
-    long_buffer_t numbers = long_buffer();
+    long_buffer_t seen = long_buffer();
 
     for (char* cur = data; *cur != '\0'; cur++)
     {
@@ -56,13 +56,13 @@ int main(void)
         int num_hi_digits = num_digits(hi); // this is calculated twice, oh well.
         for (int i = 1; i < num_hi_digits; i++)
         {
-            part_two(lo, hi, i, &numbers);
+            part_two(lo, hi, i, &seen);
         }
-        for (uint32_t i = 0; i < numbers.length; i++)
+        for (uint32_t i = 0; i < seen.length; i++)
         {
-            p2 += numbers.data[i];
+            p2 += seen.data[i];
         }
-        numbers.length = 0;
+        seen.length = 0;
 
         cur = strchr(cur, ',');
         if (cur == NULL) break;
@@ -71,7 +71,7 @@ int main(void)
     printf("Part One: %ld\n", p1);
     printf("Part Two: %ld\n", p2);
 
-    long_buffer_free(&numbers);
+    long_buffer_free(&seen);
     if (munmap(data, len) == -1) die("could not perform munmap:");
     if (close(fd) == -1) die("could not close fd:");
     return 0;
@@ -122,7 +122,7 @@ beninging:
 
     // loop from first half of `lo`
     int cur = lo / zero_padding;
-    // to first half of `hi` or zero_padding - 1, whichever is smaller
+    // to first half of `hi` or `zero_padding - 1`, whichever is smaller
     int end = num_lo_digits == num_hi_digits
             ? hi / zero_padding
             : zero_padding - 1;
@@ -149,17 +149,17 @@ beninging:
     return result;
 }
 
-static bool contains(long_buffer_t* buf, long element)
+static bool contains(long_buffer_t* seen, long element)
 {
-    for (uint32_t i = 0; i < buf->length; i++)
+    for (uint32_t i = 0; i < seen->length; i++)
     {
-        if (buf->data[i] == element)
+        if (seen->data[i] == element)
             return true;
     }
     return false;
 }
 
-static void part_two(long lo, long hi, int n, long_buffer_t* buf)
+static void part_two(long lo, long hi, int n, long_buffer_t* seen)
 {
     long num_hi_digits = num_digits(hi);
     if (num_hi_digits < n) return;
@@ -199,7 +199,7 @@ beninging:
 
     // loop from first `n` of `lo`
     long cur = lo / x;
-    // to first `n` of `hi` or zero_padding - 1, whichever is smaller
+    // to first `n` of `hi` or `zero_padding - 1`, whichever is smaller
     long end = num_lo_digits == num_hi_digits
              ? hi / x
              : zero_padding - 1;
@@ -223,8 +223,8 @@ beninging:
         else
         {
             // a hashmap would be much better. but too lazy to write one rn :p
-            if (!contains(buf, num))
-                long_buffer_push(buf, num);
+            if (!contains(seen, num))
+                long_buffer_push(seen, num);
         }
     }
 
