@@ -17,6 +17,7 @@ void die(const char* fmt, ...);
     } name##_buffer_t;                                                        \
                                                                               \
     name##_buffer_t name##_buffer(void);                                      \
+    void name##_buffer_fill(name##_buffer_t*, typ, int);                      \
     void name##_buffer_push(name##_buffer_t*, typ);                           \
     void name##_buffer_free(name##_buffer_t*);                                \
 
@@ -28,18 +29,25 @@ void die(const char* fmt, ...);
                                                                               \
     void name##_buffer_push(name##_buffer_t* buf, typ val)                    \
     {                                                                         \
-        int idx = buf->length++;                                              \
-        if (buf->length == 0)                                                 \
-        {                                                                     \
-			die("integer overflow adding an element to %s_buffer_t", #name);  \
+        name##_buffer_fill(buf, val, 1);                                      \
+    }                                                                         \
+                                                                              \
+    void name##_buffer_fill(name##_buffer_t* buf, typ val, int count)         \
+    {                                                                         \
+        uint32_t length;                                                      \
+        if (__builtin_add_overflow(buf->length, count, &length)) {            \
+        	die("integer overflow adding %d elements to %s_buffer_t",         \
+                count, #name);                                                \
         }                                                                     \
-        if (buf->length > buf->capacity)                                      \
+        if (length > buf->capacity)                                           \
         {                                                                     \
-            uint32_t capacity = power_of_2_ceil(buf->length);                 \
+            uint32_t capacity = power_of_2_ceil(length);                      \
             buf->data = realloc(buf->data, capacity * sizeof(typ));           \
             buf->capacity = capacity;                                         \
         }                                                                     \
-        buf->data[idx] = val;                                                 \
+        for (int i = 0; i < count; i++) {                                     \
+            buf->data[buf->length++] = val;                                   \
+        }                                                                     \
     }                                                                         \
                                                                               \
     void name##_buffer_free(name##_buffer_t* buf) {                           \
