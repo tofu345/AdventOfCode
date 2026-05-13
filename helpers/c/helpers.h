@@ -3,9 +3,15 @@
 
 #include <stdint.h>
 
-// display formatted error message and append `errno` if message ends with ':'
-// from dwm :p
-void die(const char* fmt, ...);
+typedef struct {
+    int x;
+    int y;
+} point_t;
+
+static inline point_t add_point(point_t a, point_t b)
+{
+    return (point_t){ a.x + b.x, a.y + b.y };
+}
 
 // from wren :p
 // A poor man's generic for buffers of different types.
@@ -59,5 +65,9 @@ DECLARE_BUFFER(int, int)
 DECLARE_BUFFER(long, long)
 
 uint32_t power_of_2_ceil(uint32_t n);
+
+// display formatted error message and append `errno` if message ends with ':'
+// from dwm :p
+void die(const char* fmt, ...);
 
 #endif // HELPERS_H
