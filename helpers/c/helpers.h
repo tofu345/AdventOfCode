@@ -2,6 +2,7 @@
 #define HELPERS_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef struct {
     int x;
