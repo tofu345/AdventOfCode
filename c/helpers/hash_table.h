@@ -1,5 +1,5 @@
-#ifndef HELPER_HASH_TABLE_H
-#define HELPER_HASH_TABLE_H
+#ifndef HELPERS_HASH_TABLE_H
+#define HELPERS_HASH_TABLE_H
 
 // Generic Hash-table
 //
@@ -24,9 +24,8 @@ typedef struct {
     void* value;
 } hash_table_entry_t;
 
-// a bucket contains an array of `HT_NUM_ENTRIES` entries, entries are always
-// continuous, if an empty entry is encountered, it is assumed there are no
-// filled entries following it
+// entries are continuous, if an empty entry is encountered, it is assumed
+// there are no filled entries following it
 typedef struct hash_table_bucket {
     bool filled[HT_NUM_ENTRIES];
     uint32_t hashes[HT_NUM_ENTRIES];
@@ -69,4 +68,4 @@ hash_table_iter_t hash_table_iter(hash_table_t* ht);
 // retrieve the next entry or NULL.
 hash_table_entry_t* hash_table_iter_next(hash_table_iter_t* it);
 
-#endif // HELPER_HASH_TABLE_H
+#endif // HELPERS_HASH_TABLE_H
