@@ -31,7 +31,7 @@ int main(void)
     const char* cur = data;
     while (*cur != 0)
     {
-        const char* end = strpbrk(cur, "\n"); // '\n' or '\0'
+        const char* end = strchr(cur, '\n');
         if (end == NULL) die("invalid data");
 
         int length = end - cur;
@@ -59,7 +59,7 @@ long max_joltage(const char* data, int length, int num_batteries)
     for (int bat = num_batteries; bat >= 1; bat--)
     {
         char max = 0;
-        for (int i = idx + 1; i < (length - bat); i++)
+        for (int i = idx + 1; i <= (length - bat); i++)
         {
             if (data[i] > max)
             {

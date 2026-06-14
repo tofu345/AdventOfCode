@@ -11,18 +11,27 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers.h"
-
-// Turns out one can just use regexes
-// Clearly, I am rusty
+#include "helpers/integer.h"
 
 const char* filename = "input.txt";
 
-static long part_one(long lo, long hi);
-static void part_two(long lo, long hi, int n, long_buffer_t*);
+// One can just use regexes
+// but I decided to be a bit 'smart', heh
+// instead of looping through all numbers in the range and finding which have repeated sequences of digits
+// i loop though the numbers with repeated sequences of digits within the range
+// just read the code :P
 
-// [https://www.geeksforgeeks.org/dsa/program-count-digits-integer-3-different-methods/]
-static int num_digits(long n);
+// TODO: understand this solution, seems much shorter than the mess I did
+// https://www.reddit.com/r/adventofcode/comments/1pbzqcx/comment/nvmrsl3/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+
+typedef struct {
+    long start;
+    long end;
+    int start_n, end_n; // number of digits
+} range_t;
+
+static long repeated_twice(range_t);
+static void repeated_n(range_t, int n, long_buffer_t* invalid_ids);
 
 int main(void)
 {
@@ -37,202 +46,181 @@ int main(void)
 
     long p1 = 0;
     long p2 = 0;
-    long_buffer_t seen = long_buffer();
+    range_t range;
+    long_buffer_t ids = long_buffer();
 
-    for (char* cur = data; *cur != '\0'; cur++)
+    for (char* cur = data; *cur != '\n' && *cur != '\0'; cur++)
     {
-        long lo = strtol(cur, NULL, 10);
-        if (errno == ERANGE) die("integer out of range: %s", cur);
+        char* endptr;
+        range.start = parse_long_(cur, &endptr);
+        range.start_n = endptr - cur;
 
-        cur = strchr(cur, '-');
-        if (cur == NULL) die("invalid data: missing '-' seperator");
-        cur++; // skip '-'
+        if (*endptr != '-') die("invalid data: missing '-'");
+        cur = endptr + 1;
 
-        long hi = strtol(cur, NULL, 10);
-        if (errno == ERANGE) die("integer out of range: %s", cur);
+        range.end = parse_long_(cur, &endptr);
+        range.end_n = endptr - cur;
 
-        p1 += part_one(lo, hi);
+        if (*endptr != ',' && !(*endptr == '\n' || *endptr == '\0'))
+            die("invalid data: missing ','");
+        cur = endptr;
 
-        int num_hi_digits = num_digits(hi); // this is calculated twice, oh well.
-        for (int i = 1; i < num_hi_digits; i++)
-        {
-            part_two(lo, hi, i, &seen);
-        }
-        for (uint32_t i = 0; i < seen.length; i++)
-        {
-            p2 += seen.data[i];
-        }
-        seen.length = 0;
+        p1 += repeated_twice(range);
 
-        cur = strchr(cur, ',');
-        if (cur == NULL) break;
+        for (int n = 1; n <= range.end_n / 2; n++)
+            repeated_n(range, n, &ids);
+
+        for (uint32_t i = 0; i < ids.length; i++)
+            p2 += ids.data[i];
+
+        ids.length = 0;
     }
 
     printf("Part One: %ld\n", p1);
     printf("Part Two: %ld\n", p2);
 
-    long_buffer_free(&seen);
+    long_buffer_free(&ids);
     if (munmap(data, len) == -1) die("could not perform munmap:");
     if (close(fd) == -1) die("could not close fd:");
     return 0;
 }
 
-static int num_digits(long n)
-{
-    if (n == 0) return 1;
-
-    // long count = 0;
-    // while (n != 0)
-    // {
-    //     n /= 10;
-    //     count++;
-    // }
-    // return count;
-
-    // unsure if this is better
-
-    return floor(log10(labs(n))) + 1;
-}
-
 static long _pow(long a, long pow)
 {
+    // using <math.h> `pow()` may be better, but idk
     long result = 1;
     for (long i = 0; i < pow; i++)
         result *= a;
     return result;
 }
 
-static long part_one(long lo, long hi)
+static long repeated_twice(range_t range)
 {
     long result = 0;
-    int num_hi_digits = num_digits(hi);
+    long start = range.start;
+    int start_n = range.start_n;
 
 beninging:
-    int num_lo_digits = num_digits(lo);
-    if (num_lo_digits % 2 != 0) // must have even number of digits
+    if (start_n % 2 != 0) // must have even number of digits
     {
         //     from 999 -> 1000
         // 3 digits ^^^     ^^^ 3 zeros
-        lo = _pow(10, num_lo_digits);
-        if (lo > hi) return 0;
-        num_lo_digits++;
+        start = _pow(10, start_n);
+        start_n++;
+        if (start > range.end) return result;
     }
 
-    long zero_padding = _pow(10, num_lo_digits / 2);
+    long zero_padding = _pow(10, start_n / 2);
 
-    // loop from first half of `lo`
-    int cur = lo / zero_padding;
-    // to first half of `hi` or `zero_padding - 1`, whichever is smaller
-    int end = num_lo_digits == num_hi_digits
-            ? hi / zero_padding
-            : zero_padding - 1;
-    for (; cur <= end; cur++)
+    // loop from first half of `start`
+    int i = start / zero_padding;
+    // to first half of `range.end` or `zero_padding - 1`, whichever is smaller
+    int j = start_n == range.end_n
+          ? range.end / zero_padding
+          : zero_padding - 1;
+
+    for (; i <= j; i++)
     {
-        long num = cur + (cur * zero_padding);
+        long id = i + (i * zero_padding);
 
-        if (num < lo)
+        if (id < start)
             continue;
-        else if (num > hi)
+        else if (id > range.end)
             break;
         else
-            result += num;
+            result += id;
     }
 
-    // e.g. lo: 1234, hi: 123456
+    // e.g. start: 1234, range.end: 123456
     // done 1234 to 9999, now 100000 to 123456
-    if (num_lo_digits < num_hi_digits)
+    if (start_n < range.end_n)
     {
-        lo = _pow(10, num_lo_digits + 1); // next even number of digits
+        start = _pow(10, start_n + 1);
+        start_n += 2;
+        if (start > range.end) return result;
         goto beninging;
     }
 
     return result;
 }
 
-static bool contains(long_buffer_t* seen, long element)
+static bool contains(long_buffer_t* ids, long element)
 {
-    for (uint32_t i = 0; i < seen->length; i++)
+    for (uint32_t i = 0; i < ids->length; i++)
     {
-        if (seen->data[i] == element)
+        if (ids->data[i] == element)
             return true;
     }
     return false;
 }
 
-static void part_two(long lo, long hi, int n, long_buffer_t* seen)
+static void repeated_n(range_t range, int n, long_buffer_t* ids)
 {
-    long num_hi_digits = num_digits(hi);
-    if (num_hi_digits < n) return;
+    if (range.end_n < n) return;
+
+    long start = range.start;
+    int start_n = range.start_n;
 
 beninging:
-    long num_lo_digits = num_digits(lo);
-    if (num_lo_digits % n != 0)
+    if (start_n == n || start_n % n != 0)
     {
-        lo = _pow(10, num_lo_digits);
-        num_lo_digits++;
-        if (lo > hi) return;
+        start = _pow(10, start_n);
+        start_n++;
+        if (start > range.end) return;
 
-        // pad zeros until `n` is a factor of `num_lo_digits`
-        while (num_lo_digits % n != 0)
+        // pad zeros until `n` is a factor of `start_n`
+        while (start_n % n != 0)
         {
-            num_lo_digits++;
-            lo *= 10;
-            if (lo > hi) return;
+            start *= 10;
+            start_n++;
+            if (start > range.end) return;
         }
     }
 
+    // number of times to be repeated (i.e. 12 -> 1212 -> 121212)
+    // to have the same number of digits as `start`
+    int repeats = start_n / n;
     long zero_padding = _pow(10, n);
 
-    if (num_lo_digits == n)
+    // dividing `start` by `x` leaves the first `n` digits
+    long x = _pow(10, start_n - n);
+
+    // loop from first `n` of `start`
+    long i = start / x;
+    // to first `n` of `range.end` or `zero_padding - 1`, whichever is smaller
+    long j = start_n == range.end_n
+           ? range.end / x
+           : zero_padding - 1;
+
+    for (; i <= j; i++)
     {
-        // `lo` can only be repeated once with the current `n`
-        // pad by `n` zeros to continue
-        lo *= zero_padding;
-        num_lo_digits += n;
-        if (lo > hi) return;
-    }
-
-    // n: 2
-    // lo: 12345678
-    // lo / x: 12
-    long x = _pow(10, num_lo_digits - n);
-
-    // loop from first `n` of `lo`
-    long cur = lo / x;
-    // to first `n` of `hi` or `zero_padding - 1`, whichever is smaller
-    long end = num_lo_digits == num_hi_digits
-             ? hi / x
-             : zero_padding - 1;
-
-    // number of times `cur` has to be repeated (i.e. 12 -> 1212 -> 121212)
-    // to have the same number of digits as `lo`
-    int repeats = num_lo_digits / n;
-    for (; cur <= end; cur++)
-    {
-        long num = cur;
-        for (int i = 1; i < repeats; i++)
+        // repeat `i` `n` times
+        long id = i;
+        for (int k = 1; k < repeats; k++)
         {
-            num *= zero_padding;
-            num += cur;
+            id *= zero_padding;
+            id += i;
         }
 
-        if (num < lo)
+        if (id < start)
             continue;
-        else if (num > hi)
+        else if (id > range.end)
             break;
         else
         {
-            // a hashmap would be much better. but too lazy to write one rn :p
-            if (!contains(seen, num))
-                long_buffer_push(seen, num);
+            // a hashmap would be much better. but too lazy to write/find one rn :p
+            if (!contains(ids, id))
+                long_buffer_push(ids, id);
         }
     }
 
-    // e.g. lo: 1234, hi: 123456
+    // e.g. start: 1234, range.end: 123456
     // done 1234 to 9999, now 100000 to 123456
-    if (num_lo_digits < num_hi_digits)
+    if (start_n < range.end_n)
     {
-        lo = _pow(10, num_lo_digits);
+        start = _pow(10, start_n);
+        start_n++;
+        if (start > range.end) return;
         goto beninging;
     }
 }

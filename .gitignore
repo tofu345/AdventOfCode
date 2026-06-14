@@ -2,6 +2,7 @@ test*.txt
 input*.txt
 main
 
+unity
 target/
 .stack-work/
 stack.yaml.lock

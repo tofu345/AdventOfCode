@@ -1,5 +1,8 @@
-INCS = -I ~/AdventOfCode/helpers/c
-CFLAGS = -g -Wall -Wextra -std=c23 -pedantic-errors $(INCS)
+DIR = ~/AdventOfCode/c
 
-main: main.c ~/AdventOfCode/helpers/c/*.c
-	$(CC) $(CFLAGS) $^ -o $@
+CFLAGS = -g -Wall -Wextra -pedantic-errors -I $(DIR)
+
+main: .FORCE
+	$(CC) $(CFLAGS) main.c $(DIR)/helpers.c -o $@
+
+.FORCE:

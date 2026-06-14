@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-DEFINE_BUFFER(int, int)
-DEFINE_BUFFER(long, long)
-
 void die(const char* fmt, ...)
 {
 	va_list ap;

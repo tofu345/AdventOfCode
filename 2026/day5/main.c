@@ -119,7 +119,7 @@ int main(void)
             }
         }
 
-        cur = strpbrk(cur, "\n"); // '\n' or '\0'
+        cur = strchr(cur, '\n');
         if (cur == NULL) die("invalid data");
     }
 

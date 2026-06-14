@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "helpers.h"
+#include "helpers/point.h"
 
 DECLARE_BUFFER(point, point_t)
 DEFINE_BUFFER(point, point_t)
@@ -47,7 +48,7 @@ int main(void)
     char* data = mmap(0, len, PROT_WRITE, MAP_PRIVATE, fd, 0);
     if (data == MAP_FAILED) die("could not perform mmap:");
 
-    char* end_of_line = strpbrk(data, "\n"); // '\n' or '\0'
+    char* end_of_line = strchr(data, '\n');
     if (end_of_line == NULL) die("invalid data");
 
     const int max_x = end_of_line - data,
