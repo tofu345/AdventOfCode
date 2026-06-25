@@ -12,11 +12,11 @@
 #include "helpers.h"
 
 // Number of elements in a bucket.
-#define HT_NUM_ENTRIES 8
+#define HASH_TABLE_NUM_ENTRIES 8
 
 // Initial amount of buckets.
-#ifndef HT_INITIAL_CAPACITY
-#	define HT_INITIAL_CAPACITY 16
+#ifndef HASH_TABLE_INITIAL_CAPACITY
+#	define HASH_TABLE_INITIAL_CAPACITY 16
 #endif
 
 typedef struct {

@@ -39,7 +39,7 @@ int main(void)
     const char* data = mmap(0, data_len, PROT_READ, MAP_PRIVATE, fd, 0);
     if (data == MAP_FAILED) die("could not perform mmap:");
 
-    if (data_len <= 2) die("data cannot possibly be less than 2 characters");
+    if (data_len <= 2) die("data cannot possibly be less than/equal to 2 characters");
 
     const char* signs;
     for (int i = data_len - 2; i > 0; i--)
@@ -84,6 +84,8 @@ loop:
 
     printf("Part One: %ld\n", p1);
 
+    // inspired by https://www.reddit.com/r/adventofcode/comments/1pfhg5t/2025_day_6_part_2_visualization_for_the_sample/#lightbox
+    // its beautiful
     cur_sign_idx = 0;
     long p2 = 0;
     int offset = 0;

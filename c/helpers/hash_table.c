@@ -14,12 +14,12 @@
 hash_table_t hash_table(void)
 {
     hash_table_bucket_t* buckets =
-        calloc(HT_INITIAL_CAPACITY, sizeof(hash_table_bucket_t));
+        calloc(HASH_TABLE_INITIAL_CAPACITY, sizeof(hash_table_bucket_t));
     if (buckets == NULL) die("could not allocate hash table entries");
 
     return (hash_table_t){
         .buckets = buckets,
-        .capacity = HT_NUM_ENTRIES,
+        .capacity = HASH_TABLE_NUM_ENTRIES,
         .count = 0,
     };
 }
@@ -72,7 +72,7 @@ static int get_index(const hash_table_t* ht, uint32_t hash,
     {
         *bucket = b;
 
-        for (int i = 0; i < HT_NUM_ENTRIES; i++)
+        for (int i = 0; i < HASH_TABLE_NUM_ENTRIES; i++)
         {
             if (!b->filled[i])
             {
@@ -185,7 +185,7 @@ hash_table_entry_t* hash_table_iter_next(hash_table_iter_t* it)
 {
     while (true)
 	{
-		if (it->next_entry >= HT_NUM_ENTRIES || !it->cur_b->filled[it->next_entry])
+		if (it->next_entry >= HASH_TABLE_NUM_ENTRIES || !it->cur_b->filled[it->next_entry])
 		{
 			it->next_entry = 0;
 			if (it->cur_b->overflow != NULL)
