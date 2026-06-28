@@ -56,8 +56,7 @@ static bool bigger_integer(void* a, void* b)
     return (intptr_t)a > (intptr_t)b;
 }
 
-// connect [a] and [b], return true if all boxes are in the same circuit after connecting
-static bool connect(box_t* a, box_t* b, uint_buffer_t* circuits,
+static void connect(box_t* a, box_t* b, uint_buffer_t* circuits,
                     const box_buffer_t* boxes)
 {
     if (a->circuit == 0 && b->circuit == 0)
@@ -95,7 +94,6 @@ static bool connect(box_t* a, box_t* b, uint_buffer_t* circuits,
         }
         circuits->data[b->circuit] += count;
     }
-    return circuits->data[a->circuit] == boxes->length;
 }
 
 int main(void)
@@ -183,7 +181,8 @@ int main(void)
     for (uint32_t i = 0; i < 3; i++)
     {
         void* count;
-        if (!binary_heap_pop(&circuit_heap, &count)) die("less than 3 circuits exist for part 1");
+        if (!binary_heap_pop(&circuit_heap, &count))
+            die("less than 3 circuits exist for part 1");
         p1 *= (intptr_t)count;
     }
 
@@ -194,7 +193,9 @@ int main(void)
         pair_t* pair = &pairs.data[(uintptr_t)idx];
         box_t* a = &boxes.data[pair->box_a];
         box_t* b = &boxes.data[pair->box_b];
-        if (connect(a, b, &circuits, &boxes))
+        connect(a, b, &circuits, &boxes);
+
+        if (circuits.data[a->circuit] == boxes.length)
         {
             printf("Part Two: %ld\n", (long)a->x * (long)b->x);
             goto cleanup;
