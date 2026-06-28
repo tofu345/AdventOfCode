@@ -27,9 +27,9 @@ typedef struct {
 // entries are continuous, if an empty entry is encountered, it is assumed
 // there are no filled entries following it
 typedef struct hash_table_bucket {
-    bool filled[HT_NUM_ENTRIES];
-    uint32_t hashes[HT_NUM_ENTRIES];
-    hash_table_entry_t entries[HT_NUM_ENTRIES];
+    bool filled[HASH_TABLE_NUM_ENTRIES];
+    uint32_t hashes[HASH_TABLE_NUM_ENTRIES];
+    hash_table_entry_t entries[HASH_TABLE_NUM_ENTRIES];
     struct hash_table_bucket* overflow;
 } hash_table_bucket_t;
 

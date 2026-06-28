@@ -1,4 +1,4 @@
-DIR = ~/AdventOfCode/c
+DIR = ../../../
 HELPERS = $(addprefix $(DIR)/helpers/, binary_heap.c)
 CFLAGS = -g -Og -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I $(DIR)
 

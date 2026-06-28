@@ -1,5 +1,4 @@
-DIR = ~/AdventOfCode/c
-
+DIR = ../../c
 CFLAGS = -g -Wall -Wextra -pedantic-errors -I $(DIR)
 
 main: .FORCE

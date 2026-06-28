@@ -1,4 +1,4 @@
-DIR = ~/AdventOfCode/c
+DIR = ../../c
 HELPERS = $(addprefix $(DIR)/helpers/, )
 CFLAGS = -g -Og -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I $(DIR)
 
