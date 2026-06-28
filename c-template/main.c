@@ -17,6 +17,7 @@ int main(void)
 
     off_t data_len = lseek(fd, 0, SEEK_END);
     if (data_len == -1) die("could not get file length:");
+    else if (data_len == 0) die("file '%s' cannot be empty", filename);
 
     const char* data = mmap(0, data_len, PROT_READ, MAP_PRIVATE, fd, 0);
     if (data == MAP_FAILED) die("could not perform mmap:");

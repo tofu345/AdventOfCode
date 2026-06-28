@@ -21,16 +21,18 @@ void die(const char* fmt, ...);
     {                                                                         \
         return (name##_buffer_t){0};                                          \
     }                                                                         \
+    void name##_buffer_alloc(name##_buffer_t*, int);                          \
     void name##_buffer_fill(name##_buffer_t*, typ, int);                      \
     void name##_buffer_push(name##_buffer_t*, typ);                           \
     void name##_buffer_free(name##_buffer_t*);                                \
 
 #define DEFINE_BUFFER(name, typ)                                              \
-    void name##_buffer_fill(name##_buffer_t* buf, typ val, int count)         \
+    void name##_buffer_alloc(name##_buffer_t* buf, int count)                 \
     {                                                                         \
         uint32_t length;                                                      \
-        if (__builtin_add_overflow(buf->length, count, &length)) {            \
-        	die("integer overflow adding %d elements to %s_buffer_t",         \
+        if (__builtin_add_overflow(buf->length, count, &length))              \
+        {                                                                     \
+            die("int overflow allocating %d elements to %s_buffer_t",         \
                 count, #name);                                                \
         }                                                                     \
         if (length > buf->capacity)                                           \
@@ -39,6 +41,11 @@ void die(const char* fmt, ...);
             buf->data = realloc(buf->data, capacity * sizeof(typ));           \
             buf->capacity = capacity;                                         \
         }                                                                     \
+    }                                                                         \
+                                                                              \
+    void name##_buffer_fill(name##_buffer_t* buf, typ val, int count)         \
+    {                                                                         \
+        name##_buffer_alloc(buf, count);                                      \
         for (int i = 0; i < count; i++) {                                     \
             buf->data[buf->length++] = val;                                   \
         }                                                                     \
@@ -54,6 +61,9 @@ void die(const char* fmt, ...);
         *buf = (name##_buffer_t){0};                                          \
     }
 
+// From:
+// https://github.com/wren-lang
+// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2Float
 uint32_t power_of_2_ceil(uint32_t n);
 
 #endif // HELPERS_H

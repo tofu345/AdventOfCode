@@ -5,9 +5,6 @@
 
 #include "helpers.h"
 
-DECLARE_BUFFER(int, int)
-DECLARE_BUFFER(long, long)
-
 static inline long parse_long(const char* string)
 {
     char* endptr;
@@ -24,5 +21,8 @@ static inline long parse_long_(const char* string, char** endptr)
     else if (*endptr == string) die("could not parse integer: %s", string);
     return num;
 }
+
+DECLARE_BUFFER(int, int)
+DECLARE_BUFFER(long, long)
 
 #endif // HELPERS_INT_H
