@@ -11,8 +11,10 @@
 #include <unistd.h>
 
 #include "helpers.h"
+#include "helpers/integer.h"
+#include "helpers/string_slice.h"
 
-const char* filename = "input.txt";
+const char* filename = "test.txt";
 
 typedef struct {
     long lo;
@@ -52,32 +54,23 @@ int main(void)
     if (data == MAP_FAILED) die("could not perform mmap:");
 
     range_buffer_t ranges = range_buffer();
+    string_t data_string = string_of(len, data);
 
-    const char* cur = data;
-    const char* end = strstr(cur, "\n\n");
-    if (end == NULL) die("invalid data");
-
-    for (;; cur++)
+    while (data_string.len > 0)
     {
+        string_t line = string_split(&data_string, '\n');
+        if (line.len == 0) break;
+
+        string_t range_string = string_split(&line, '-');
+
         range_t r = {0};
-        r.lo = strtol(cur, NULL, 10);
-        if (errno == ERANGE) die("integer out of range: %s", cur);
+        r.lo = parse_long(range_string.data);
 
-        cur = strchr(cur, '-');
-        if (cur == NULL) die("invalid data: missing '-' seperator");
-        cur++; // skip '-'
-
-        r.hi = strtol(cur, NULL, 10);
-        if (errno == ERANGE) die("integer out of range: %s", cur);
+        range_string = string_split(&line, '-');
+        r.hi = parse_long(range_string.data);
 
         range_buffer_push(&ranges, r);
-
-        cur = strchr(cur, '\n');
-        if (cur == NULL) die("invalid data");
-
-        if (cur == end) break;
     }
-    cur += 2; // skip '\n\n'
 
     // brute force combining ranges that can be combined
     while (1)
@@ -105,10 +98,10 @@ int main(void)
     }
 
     int p1 = 0;
-    for (; *cur != '\0'; cur++)
+    while (data_string.len > 0)
     {
-        long id = strtol(cur, NULL, 10);
-        if (errno == ERANGE) die("integer out of range: %s", cur);
+        string_t line = string_split(&data_string, '\n');
+        long id = parse_long(line.data);
 
         for (uint32_t i = 0; i < ranges.length; i++)
         {
@@ -118,9 +111,6 @@ int main(void)
                 break;
             }
         }
-
-        cur = strchr(cur, '\n');
-        if (cur == NULL) die("invalid data");
     }
 
     long p2 = 0;

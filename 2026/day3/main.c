@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "helpers.h"
+#include "helpers/string_slice.h"
 
 const char* filename = "input.txt";
 
@@ -28,18 +29,13 @@ int main(void)
 
     long p1 = 0;
     long p2 = 0;
-    const char* cur = data;
-    while (*cur != 0)
+    string_t data_string = string_of(len, data);
+    while (data_string.len > 0)
     {
-        const char* end = strchr(cur, '\n');
-        if (end == NULL) die("invalid data");
+        string_t line = string_split(&data_string, '\n');
 
-        int length = end - cur;
-
-        p1 += max_joltage(cur, length, 2);
-        p2 += max_joltage(cur, length, 12);
-
-        cur = end + 1;
+        p1 += max_joltage(line.data, line.len, 2);
+        p2 += max_joltage(line.data, line.len, 12);
     }
 
     printf("Part One: %ld\n", p1);

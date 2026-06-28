@@ -9,6 +9,7 @@
 
 #include "helpers.h"
 #include "helpers/integer.h"
+#include "helpers/string_slice.h"
 
 // copied this person for part2, the idea is brilliant
 // https://www.reddit.com/r/adventofcode/comments/1pg9w66/comment/nveor3r/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
@@ -29,23 +30,24 @@ int main(void)
     char* start = strchr(data, 'S');
     if (start == NULL) die("cannot find tachyon entry point");
     *start = '|';
+    int start_position = start - data;
 
-    char* line = strchr(start, '\n');
-    if (line == NULL) die("only one line");
-    int line_length = line - data;
-    line++;
+    string_t data_string = string_of(data_len, data);
+    string_t line = string_split(&data_string, '\n');
 
     long_buffer_t buf = {0};
-    long_buffer_fill(&buf, 0, line_length);
-    buf.data[start - data] = 1;
+    long_buffer_fill(&buf, 0, line.len);
+    buf.data[start_position] = 1;
 
     int p1 = 0;
-    while (1)
+    while (data_string.len > 0)
     {
+        line = string_split(&data_string, '\n');
+
         int i = 0;
-        for (; line[i] != '\0' && line[i] != '\n'; i++)
+        for (; line.data[i] != '\0' && line.data[i] != '\n'; i++)
         {
-            if (line[i] == '^' && data[i] == '|')
+            if (line.data[i] == '^' && data[i] == '|')
             {
                 p1++;
                 data[i] = '.';
@@ -59,9 +61,6 @@ int main(void)
                 buf.data[i] = 0;
             }
         }
-
-        if (line[i] == '\0') break;
-        line += i + 1;
     }
 
     printf("Part One: %d\n", p1);
