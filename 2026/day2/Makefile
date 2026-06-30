@@ -1,8 +1,8 @@
 DIR = ../../c
-HELPERS = $(addprefix $(DIR)/helpers/, integer.c)
-CFLAGS = -g -Wall -Wextra -pedantic-errors -I $(DIR)
+HELPERS = $(addprefix $(DIR)/helpers/, integer.c string_slice.c)
+CFLAGS = -g -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I $(DIR)
 
 main: .FORCE
-	$(CC) $(CFLAGS) main.c $(DIR)/helpers.c $(HELPERS) -o $@
+	$(CC) $(CFLAGS) main.c $(DIR)/helpers.c $(HELPERS) -o $@ -lm
 
 .FORCE:

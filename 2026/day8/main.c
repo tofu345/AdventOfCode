@@ -164,7 +164,7 @@ int main(void)
 
     // there may exist a better way to do this,
     // find the 3 largest circuit sizes that boxes still point to
-    binary_heap_t circuit_heap = binary_heap(&bigger_integer);
+    binary_heap_t circuit_heap = binary_heap_of(circuits.length, &bigger_integer);
     for (uint32_t i = 0; i < boxes.length; i++)
     {
         box_t b = boxes.data[i];
