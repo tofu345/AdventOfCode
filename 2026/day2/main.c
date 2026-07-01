@@ -15,13 +15,12 @@
 #include "helpers/integer.h"
 #include "helpers/string_slice.h"
 
-const char* filename = "test.txt";
+const char* filename = "input.txt";
 
 // Copied this person, my original solution was similir, but this is SO much better
 // I don't fully understand the math, but I think I have the general idea
 // https://www.reddit.com/r/adventofcode/comments/1pbzqcx/comment/nvmrsl3/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
 
-// this i don't completely understand
 const uint64_t unique_prime_factors[][2] = {
     {1,  0}, // 1
     {2,  0}, // 2
