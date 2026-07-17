@@ -8,7 +8,7 @@
 // from dwm :p
 void die(const char* fmt, ...);
 
-// from wren :p
+// from wren
 // A poor man's generic for buffers of different types.
 #define DECLARE_BUFFER(name, typ)                                             \
     typedef struct {                                                          \

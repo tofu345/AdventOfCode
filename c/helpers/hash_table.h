@@ -45,8 +45,19 @@ void hash_table_free(hash_table_t* ht);
 uint32_t hash_cstring(const char *key); // Calculate 64-bit FNV-1a hash of string.
 uint32_t hash_string(const char* key, int len); // Calculate 64-bit FNV-1a hash of string.
 
-// store value of [key] in [dest], returns true if key exists in hash table.
+// From v8's ComputeIntegerHash() which in turn cites:
+// Thomas Wang, Integer Hash Functions.
+// http://www.concentric.net/~Ttwang/tech/inthash.htm
+//
+// [seed] should be initially 0.
+uint32_t hash_bits(uint32_t key, uint32_t seed);
+
+// store value of key with [hash] in [dest], returns true if key exists in hash table.
 bool hash_table_get(const hash_table_t* ht, uint32_t hash, void** dest);
+
+// store key with [hash] in [dest], returns true if key exists in hash table.
+bool hash_table_get_entry(const hash_table_t * ht, uint32_t hash,
+                          hash_table_entry_t * dest);
 
 // set [key] to [value], returns true on success
 bool hash_table_set(hash_table_t* ht, uint32_t hash, void* key, void* value);

@@ -62,6 +62,19 @@ uint32_t hash_string(const char* key, int len)
     return hash;
 }
 
+uint32_t hash_bits(uint32_t key, uint32_t seed)
+{
+    uint32_t hash = key;
+    hash = hash ^ seed;
+    hash = ~hash + (hash << 15);  // hash = (hash << 15) - hash - 1;
+    hash = hash ^ (hash >> 12);
+    hash = hash + (hash << 2);
+    hash = hash ^ (hash >> 4);
+    hash = hash * 2057;  // hash = (hash + (hash << 3)) + (hash << 11);
+    hash = hash ^ (hash >> 16);
+    return hash;
+}
+
 static int get_index(const hash_table_t* ht, uint32_t hash,
                      hash_table_bucket_t** bucket)
 {
@@ -80,11 +93,11 @@ static int get_index(const hash_table_t* ht, uint32_t hash,
             }
             else if (b->hashes[i] == hash)
             {
-				return i;
-			}
-		}
+                return i;
+            }
+        }
 
-		b = b->overflow;
+        b = b->overflow;
     }
     return -1;
 }
@@ -95,6 +108,16 @@ bool hash_table_get(const hash_table_t* ht, uint32_t hash, void** dest)
     int i = get_index(ht, hash, &bucket);
     if (i == -1 || !bucket->filled[i]) return false;
     *dest = bucket->entries[i].value;
+    return true;
+}
+
+bool hash_table_get_entry(const hash_table_t * ht, uint32_t hash,
+                          hash_table_entry_t * dest)
+{
+    hash_table_bucket_t* bucket;
+    int i = get_index(ht, hash, &bucket);
+    if (i == -1 || !bucket->filled[i]) return false;
+    *dest = bucket->entries[i];
     return true;
 }
 
@@ -184,25 +207,25 @@ hash_table_iter_t hash_table_iter(hash_table_t* ht)
 hash_table_entry_t* hash_table_iter_next(hash_table_iter_t* it)
 {
     while (true)
-	{
-		if (it->next_entry >= HASH_TABLE_NUM_ENTRIES || !it->cur_b->filled[it->next_entry])
-		{
-			it->next_entry = 0;
-			if (it->cur_b->overflow != NULL)
-			{
-				it->cur_b = it->cur_b->overflow;
-			}
-			else if (it->cur_b_idx + 1 >= it->capacity)
-			{
-				return NULL;
-			}
-			else
-			{
-				it->cur_b = &it->buckets[++it->cur_b_idx];
-			}
-			continue;
-		}
+    {
+        if (it->next_entry >= HASH_TABLE_NUM_ENTRIES || !it->cur_b->filled[it->next_entry])
+        {
+            it->next_entry = 0;
+            if (it->cur_b->overflow != NULL)
+            {
+                it->cur_b = it->cur_b->overflow;
+            }
+            else if (it->cur_b_idx + 1 >= it->capacity)
+            {
+                return NULL;
+            }
+            else
+            {
+                it->cur_b = &it->buckets[++it->cur_b_idx];
+            }
+            continue;
+        }
 
-		return &it->cur_b->entries[it->next_entry++];
-	}
+        return &it->cur_b->entries[it->next_entry++];
+    }
 }
