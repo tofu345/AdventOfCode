@@ -17,6 +17,10 @@
 #include "helpers/arena.h"
 #include "helpers/linked_list.h"
 
+// looks nicer in lower case
+#define voidp_from_int(x) ((void *)(uintptr_t)x)
+#define int_from_voidp(x) ((int)(uintptr_t)x)
+
 const char * filename = "input.txt";
 
 typedef struct {
@@ -46,6 +50,11 @@ DEFINE_BUFFER(seen, seen_line_t)
 bool larger_rect(void * a, void * b)
 {
     return ((rect_t *)a)->area >= ((rect_t *)b)->area;
+}
+
+int sort_nums(const void * a, const void * b)
+{
+    return *(const int *)a - *(const int *)b;
 }
 
 // https://www.geeksforgeeks.org/dsa/how-to-check-if-a-given-point-lies-inside-a-polygon/
@@ -112,6 +121,38 @@ int main(void)
 
     if (vertices.length == 0) die("no vertices provided");
 
+    // compress coordinates
+    // https://www.youtube.com/watch?v=s9oXy-fZUzg
+    int_buffer_t compressed = int_buffer();
+    compressed.length = vertices.length * 2;
+    int_buffer_alloc(&compressed, compressed.length);
+    for (uint32_t i = 0, j = 0; i < compressed.length; i += 2, j++)
+    {
+        compressed.data[i] = vertices.data[j].x;
+        compressed.data[i + 1] = vertices.data[j].y;
+    }
+
+    qsort(compressed.data, compressed.length, sizeof(int), sort_nums);
+    hash_table_t compressed_coords = hash_table();
+
+    int prev = compressed.data[0];
+    compressed.data[0] = 1;
+    for (uint32_t i = 1; i < compressed.length; i++)
+    {
+        int uncompressed = compressed.data[i];
+        if (compressed.data[i] == prev)
+        {
+            compressed.data[i] = compressed.data[i-1];
+            hash_table_set(&compressed_coords, hash_bits(uncompressed, 0),
+                           voidp_from_int(uncompressed),
+                           voidp_from_int(compressed.data[i]));
+        }
+        else
+            compressed.data[i] = compressed.data[i-1] + 1;
+        prev = uncompressed;
+    }
+    int_buffer_free(&compressed);
+
     // stores all combinations of 2 vertices
     rect_buffer_t rects = rect_buffer();
     uint32_t num_rects = (vertices.length * (vertices.length - 1)) / 2;
@@ -130,10 +171,34 @@ int main(void)
             rect.y1 = MIN(vertices.data[i].y, vertices.data[j].y);
             rect.y2 = MAX(vertices.data[i].y, vertices.data[j].y);
             rect.area = ((long)(rect.x2 - rect.x1) + 1) * ((long)(rect.y2 - rect.y1) + 1);
+
+            // compress rect coordinates
+            void * res;
+            hash_table_get(&compressed_coords, hash_bits(rect.x1, 0), &res);
+            rect.x1 = int_from_voidp(res);
+            hash_table_get(&compressed_coords, hash_bits(rect.x2, 0), &res);
+            rect.x2 = int_from_voidp(res);
+            hash_table_get(&compressed_coords, hash_bits(rect.y1, 0), &res);
+            rect.y1 = int_from_voidp(res);
+            hash_table_get(&compressed_coords, hash_bits(rect.y2, 0), &res);
+            rect.y2 = int_from_voidp(res);
+
             int pos = rects.length;
             rect_buffer_push(&rects, rect);
             binary_heap_add(&rect_heap, &rects.data[pos]);
         }
+    }
+
+    // convert `vertices` to compressed coordinates
+    for (uint32_t i = 0; i < vertices.length; i++)
+    {
+        vertex_t * v = &vertices.data[i];
+        void * res;
+
+        hash_table_get(&compressed_coords, hash_bits(v->x, 0), &res);
+        v->x = (int)(uintptr_t)res;
+        hash_table_get(&compressed_coords, hash_bits(v->y, 0), &res);
+        v->y = (int)(uintptr_t)res;
     }
 
     void * res;
@@ -199,6 +264,7 @@ next_rect:
     }
 
 cleanup:
+    hash_table_free(&compressed_coords);
     hash_table_iter_t iter = hash_table_iter(&ht);
     hash_table_entry_t * entry;
     while ((entry = hash_table_iter_next(&iter)))
