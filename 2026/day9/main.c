@@ -15,7 +15,6 @@
 #include "helpers/binary_heap.h"
 #include "helpers/hash_table.h"
 #include "helpers/arena.h"
-#include "helpers/linked_list.h"
 
 // looks nicer in lower case
 #define voidp_from_int(x) ((void *)(uintptr_t)x)
@@ -34,13 +33,13 @@ typedef struct {
     long area;
 } rect_t;
 
-// a line of green/red tiles that has been previously checked
+// a horizontal line that has been confirmed to contain green/red tiles
 typedef struct {
     int start, end;
 } seen_line_t;
 
 // this is getting out of hand.
-DECLARE_BUFFER(vertex, vertex_t) // not necessary
+DECLARE_BUFFER(vertex, vertex_t)
 DEFINE_BUFFER(vertex, vertex_t)
 DECLARE_BUFFER(rect, rect_t)
 DEFINE_BUFFER(rect, rect_t)
@@ -52,7 +51,7 @@ bool larger_rect(void * a, void * b)
     return ((rect_t *)a)->area >= ((rect_t *)b)->area;
 }
 
-int sort_nums(const void * a, const void * b)
+int sort_int(const void * a, const void * b)
 {
     return *(const int *)a - *(const int *)b;
 }
@@ -67,6 +66,10 @@ static inline bool on_edge(uint64_t x1, uint64_t y1, uint64_t x2, uint64_t y2,
     return MIN(x1, x2) <= x && x <= MAX(x1, x2)
         && MIN(y1, y2) <= y && y <= MAX(y1, y2);
 }
+
+// draw a line right from (x, y) to infinity (? not sure)
+// and count the number of edges it intersects with,
+// if it is odd, (x, y) is enclosed in the polygon with vertices `vert`.
 bool is_inside(vertex_t vert[], int nvert, uint64_t x, uint64_t y, int * edges)
 {
     assert(edges != NULL);
@@ -112,17 +115,17 @@ int main(void)
     {
         string_t line = string_split(&data_string, '\n'),
                  num  = string_split(&line, ',');
-        vertex_t t;
-        t.x = parse_long(num.data);
+        vertex_t v;
+        v.x = parse_long(num.data);
         num = string_split(&line, ',');
-        t.y = parse_long(num.data);
-        vertex_buffer_push(&vertices, t);
+        v.y = parse_long(num.data);
+        vertex_buffer_push(&vertices, v);
     }
 
     if (vertices.length == 0) die("no vertices provided");
 
-    // compress coordinates
     // https://www.youtube.com/watch?v=s9oXy-fZUzg
+    // create map of compressed coordinates
     int_buffer_t compressed = int_buffer();
     compressed.length = vertices.length * 2;
     int_buffer_alloc(&compressed, compressed.length);
@@ -131,24 +134,25 @@ int main(void)
         compressed.data[i] = vertices.data[j].x;
         compressed.data[i + 1] = vertices.data[j].y;
     }
+    qsort(compressed.data, compressed.length, sizeof(int), sort_int);
 
-    qsort(compressed.data, compressed.length, sizeof(int), sort_nums);
     hash_table_t compressed_coords = hash_table();
-
     int prev = compressed.data[0];
     compressed.data[0] = 1;
+    hash_table_set(&compressed_coords, hash_bits(prev, 0),
+                   voidp_from_int(prev), voidp_from_int(1));
     for (uint32_t i = 1; i < compressed.length; i++)
     {
         int uncompressed = compressed.data[i];
         if (compressed.data[i] == prev)
-        {
             compressed.data[i] = compressed.data[i-1];
+        else
+        {
+            compressed.data[i] = compressed.data[i-1] + 1;
             hash_table_set(&compressed_coords, hash_bits(uncompressed, 0),
                            voidp_from_int(uncompressed),
                            voidp_from_int(compressed.data[i]));
         }
-        else
-            compressed.data[i] = compressed.data[i-1] + 1;
         prev = uncompressed;
     }
     int_buffer_free(&compressed);
@@ -189,7 +193,7 @@ int main(void)
         }
     }
 
-    // convert `vertices` to compressed coordinates
+    // compress `vertices`
     for (uint32_t i = 0; i < vertices.length; i++)
     {
         vertex_t * v = &vertices.data[i];
@@ -229,14 +233,16 @@ int main(void)
                 for (int i = seen->length - 1; i >= 0; i--)
                     if (r->x1 >= seen->data[i].start && r->x2 <= seen->data[i].end)
                     {
-                        // make most recent
-                        seen_line_t last = seen->data[seen->length - 1];
-                        seen->data[seen->length - 1] = seen->data[i];
-                        seen->data[i] = last;
+                        if ((uint32_t)i != seen->length - 1)
+                        {
+                            // make most recent
+                            seen_line_t last = seen->data[seen->length - 1];
+                            seen->data[seen->length - 1] = seen->data[i];
+                            seen->data[i] = last;
+                        }
                         goto next_line;
                     }
 
-            // uses raytracing
             // a line does not contain any holes if there are no edges between [r.x1] and [r.x2]
             // which is the difference between the edges right of [r.x2] and [r.x1]
             int edges1, edges2;
