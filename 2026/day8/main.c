@@ -8,10 +8,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers.h"
-#include "helpers/binary_heap.h"
-#include "helpers/integer.h"
-#include "helpers/string_slice.h"
+#include "utils.h"
+#include "binary_heap.h"
+#include "integer.h"
+#include "string_slice.h"
 
 // not my most memory efficient code, this
 

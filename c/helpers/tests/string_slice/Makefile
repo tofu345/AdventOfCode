@@ -1,11 +1,13 @@
-DIR = ../../../
-HELPERS = $(addprefix $(DIR)/helpers/, string_slice.c)
-CFLAGS = -g -Og -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I $(DIR)
+DIR = ../..
+HELPERS = $(addprefix $(DIR)/objs/, utils.o string_slice.o)
 
-main: .FORCE
-	$(CC) $(CFLAGS) main.c $(DIR)/helpers.c $(HELPERS) ../unity/unity.c -o $@
+CFLAGS = -g -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I $(DIR)
 
-run: main
-	valgrind --leak-check=full -s ./main
+all: helpers main
 
-.FORCE:
+main: main.c
+	$(CC) $(CFLAGS) main.c $(HELPERS) ../unity/unity.c -o $@
+
+.PHONY: helpers
+helpers:
+	$(MAKE) -C $(DIR)

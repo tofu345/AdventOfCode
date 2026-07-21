@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "helpers/arena.h"
+#include "arena.h"
 
 typedef struct node {
     void * data;

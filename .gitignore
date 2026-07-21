@@ -7,3 +7,5 @@ target/
 .stack-work/
 stack.yaml.lock
 dist-newstyle/
+
+c/helpers/objs/

@@ -1,10 +1,15 @@
-CFLAGS = -g -Og -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I$(DIR)
+DIR = ../../c/helpers
+HELPERS = $(addprefix $(DIR)/objs/, utils.o string_slice.o integer.o \
+	binary_heap.o hash_table.o arena.o)
 
-DIR = ../../c
-HELPERS = $(addprefix $(DIR)/helpers/, string_slice.c integer.c binary_heap.c \
-	    hash_table.c arena.c)
+CFLAGS = -g -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I $(DIR)
 
-main: .FORCE
-	$(CC) $(CFLAGS) main.c $(DIR)/helpers.c $(HELPERS) -o $@
+all: helpers main
 
-.FORCE:
+main: main.c
+	$(CC) $(CFLAGS) main.c $(HELPERS) -o $@
+
+.PHONY: helpers
+helpers:
+	$(MAKE) -C $(DIR)
+FORCE:

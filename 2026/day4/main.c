@@ -10,8 +10,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers.h"
-#include "helpers/point.h"
+#include "utils.h"
+#include "point.h"
+#include "buffer.h"
 
 DECLARE_BUFFER(point, point_t)
 DEFINE_BUFFER(point, point_t)

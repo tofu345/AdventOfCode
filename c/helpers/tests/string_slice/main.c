@@ -1,6 +1,6 @@
 #include "../unity/unity.h"
 
-#include "helpers/string_slice.h"
+#include "string_slice.h"
 
 // https://www.youtube.com/watch?v=fUVvfDkDb-Y
 

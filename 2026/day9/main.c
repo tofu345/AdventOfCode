@@ -9,12 +9,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers.h"
-#include "helpers/string_slice.h"
-#include "helpers/integer.h"
-#include "helpers/binary_heap.h"
-#include "helpers/hash_table.h"
-#include "helpers/arena.h"
+#include "utils.h"
+#include "string_slice.h"
+#include "integer.h"
+#include "binary_heap.h"
+#include "hash_table.h"
+#include "arena.h"
 
 // looks nicer in lower case
 #define voidp_from_int(x) ((void *)(uintptr_t)x)

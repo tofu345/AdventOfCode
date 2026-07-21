@@ -3,7 +3,8 @@
 
 #include <errno.h>
 
-#include "helpers.h"
+#include "utils.h"
+#include "buffer.h"
 
 static inline long parse_long(const char* string)
 {

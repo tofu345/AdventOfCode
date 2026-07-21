@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers.h"
+#include "utils.h"
 
 // deceptively hard, or maybe I just suck..
 // https://aoc.just2good.co.uk/2025/1.html
@@ -43,7 +43,7 @@ int main(void)
     for (; *data != 0; data++)
     {
         int rotation = strtol(data + 1, NULL, 10);
-        int new_pos;
+        int new_pos = 0;
         char dir = *data;
         if (dir == 'L')
         {

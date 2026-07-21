@@ -1,6 +1,5 @@
 #include "linked_list.h"
-
-#include "helpers.h"
+#include "utils.h"
 
 #include <assert.h>
 

@@ -12,8 +12,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers/integer.h"
-#include "helpers/string_slice.h"
+#include "utils.h"
+#include "integer.h"
+#include "string_slice.h"
 
 const char* filename = "input.txt";
 

@@ -1,8 +1,13 @@
-DIR = ../../c
-HELPERS = $(addprefix $(DIR)/helpers/, string_slice.c)
-CFLAGS = -g -Wall -Wextra -pedantic-errors -I $(DIR)
+DIR = ../../c/helpers
+HELPERS = $(addprefix $(DIR)/objs/, utils.o string_slice.o)
 
-main: .FORCE
-	$(CC) $(CFLAGS) main.c $(DIR)/helpers.c $(HELPERS) -o $@
+CFLAGS = -g -Wall -Wextra -pedantic-errors -fsanitize=signed-integer-overflow -I $(DIR)
 
-.FORCE:
+all: helpers main
+
+main: main.c
+	$(CC) $(CFLAGS) main.c $(HELPERS) -o $@
+
+.PHONY: helpers
+helpers:
+	$(MAKE) -C $(DIR)

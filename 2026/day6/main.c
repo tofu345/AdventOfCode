@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers/integer.h"
+#include "integer.h"
 
 const char* filename = "input.txt";
 
@@ -41,7 +41,7 @@ int main(void)
 
     if (data_len <= 2) die("data cannot possibly be less than/equal to 2 characters");
 
-    const char* signs;
+    const char* signs = NULL;
     for (int i = data_len - 2; i > 0; i--)
     {
         if (data[i] == '\n')
@@ -50,6 +50,7 @@ int main(void)
             break;
         }
     }
+    if (signs == NULL) die("missing sign");
 
     if (signs[0] != '+' && signs[0] != '*') die("last line of data must start with '*' or '+'");
 

@@ -1,7 +1,8 @@
+#include "hash_table.h"
+#include "utils.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#include "hash_table.h"
 
 // The maximum percentage of table entries that can be filled before the table
 // is grown.
@@ -45,8 +46,8 @@ void hash_table_free(hash_table_t* ht)
 uint32_t hash_cstring(const char *key)
 {
     uint32_t hash = 2166136261u;
-    for (const char* p = key; *p != '\0'; p++) {
-        hash ^= *p;
+    for (int i = 0; key[i] != '\0'; i++) {
+        hash ^= key[i];
         hash *= 16777619;
     }
     return hash;

@@ -1,6 +1,5 @@
 #include "binary_heap.h"
-
-#include "helpers.h"
+#include "utils.h"
 
 #include <stdint.h>
 #include <stdio.h>

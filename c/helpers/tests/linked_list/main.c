@@ -1,6 +1,6 @@
 #include "../unity/unity.h"
 
-#include "helpers/linked_list.h"
+#include "linked_list.h"
 
 #include <stdbool.h>
 

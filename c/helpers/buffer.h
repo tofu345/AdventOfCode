@@ -1,12 +1,7 @@
-#ifndef HELPERS_H
-#define HELPERS_H
+#ifndef HELPERS_BUFFER_H
+#define HELPERS_BUFFER_H
 
-#include <stdint.h>
-#include <stdlib.h>
-
-// display formatted error message and append `errno` if message ends with ':'
-// from dwm :p
-void die(const char* fmt, ...);
+#include "utils.h"
 
 // from wren
 // A poor man's generic for buffers of different types.
@@ -61,9 +56,4 @@ void die(const char* fmt, ...);
         *buf = (name##_buffer_t){0};                                          \
     }
 
-// From:
-// https://github.com/wren-lang
-// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2Float
-uint32_t power_of_2_ceil(uint32_t n);
-
-#endif // HELPERS_H
+#endif // HELPERS_BUFFER_H

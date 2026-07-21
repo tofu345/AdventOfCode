@@ -1,4 +1,4 @@
-#include "helpers/hash_table.h"
+#include "hash_table.h"
 
 #include "../unity/unity.h"
 

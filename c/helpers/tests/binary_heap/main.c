@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "helpers/binary_heap.h"
+#include "binary_heap.h"
 
 #define ADD(h, n) binary_heap_add(&h, (void *)(intptr_t)n);
 #define DEL(h, n) binary_heap_delete(&h, (void *)(intptr_t)n);

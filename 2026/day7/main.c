@@ -7,9 +7,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers.h"
-#include "helpers/integer.h"
-#include "helpers/string_slice.h"
+#include "utils.h"
+#include "integer.h"
+#include "string_slice.h"
 
 // copied this person for part2, the idea is brilliant
 // https://www.reddit.com/r/adventofcode/comments/1pg9w66/comment/nveor3r/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button

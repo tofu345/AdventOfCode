@@ -10,11 +10,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "helpers.h"
-#include "helpers/integer.h"
-#include "helpers/string_slice.h"
+#include "utils.h"
+#include "integer.h"
+#include "string_slice.h"
+#include "buffer.h"
 
-const char* filename = "test.txt";
+const char* filename = "input.txt";
 
 typedef struct {
     long lo;

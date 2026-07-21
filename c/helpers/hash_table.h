@@ -8,8 +8,7 @@
 // https://dave.cheney.net/2018/05/29/how-the-go-runtime-implements-maps-efficiently-without-generics
 
 #include <stdint.h>
-
-#include "helpers.h"
+#include <stddef.h>
 
 // Number of elements in a bucket.
 #define HASH_TABLE_NUM_ENTRIES 8
